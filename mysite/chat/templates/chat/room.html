@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'chat/style.css' %}">
+
+{% block content %}
+<div class="fluid-container">
+
+  <div class="p-3 jumbotron mx-auto" style="width: 50%;">
+
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+    <h1>Wellcome to chat room {{ room_name }}</h1>
+
+    <div id="chat-log" class="">
+    </div>
+
+    <input class="form-group" id="chat-message-input" type="text" size="100"><br>
+    <input class='btn btn-success'  id="chat-message-submit" type="button" value="Send">
+    <input type="hidden" name="user" id="user" value="{{ request.user }}">
+
+    {{ room_name|json_script:"room-name" }}
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.user == '{{ request.user }}') {
+              document.querySelector('#chat-log').innerHTML +=
+              ('<div class="alert alert-primary">' +
+              data.message + ' <div class="float-right"> ' + data.user
+              + '</div> </div> ');
+            } else {
+              document.querySelector('#chat-log').innerHTML +=  (
+              '<div class="alert alert-dark">' +
+              data.message + ' <div class="float-right"> ' + data.user
+              + '</div> </div>');
+            }
+
+
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const messageInputUser = document.querySelector('#user');
+            const user = messageInputUser.value;
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message, 'user': user
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+
+  </div>
+
+
+
+
+
+</div>
+{% endblock %}
