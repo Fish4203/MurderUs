@@ -9,10 +9,25 @@
 
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-    <h1>Wellcome to chat room {{ room_name }}</h1>
+    <h1>Wellcome to Game {{ room_name }}</h1>
 
-    <div id="chat-log" class="">
+
+    <div id="TaskProgress" class="">
+      <p>TaskProgress</p>
     </div>
+
+    <div id="meating" class="">
+      <p>meating</p>
+    </div>
+
+    <div id="PlayerInfo" class="">
+      <p>PlayerInfo</p>
+    </div>
+
+    <div id="Tasks" class="">
+      <p>Tasks</p>
+    </div>
+
 
     <input class="form-group" id="chat-message-input" type="text" size="100"><br>
     <input class='btn btn-success'  id="chat-message-submit" type="button" value="Send">
@@ -29,6 +44,12 @@
             + roomName
             + '/'
         );
+
+        chatSocket.onconnect = function(e) {
+          chatSocket.send(JSON.stringify({
+              'role': 'new', 'user': user
+          }));
+        };
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
