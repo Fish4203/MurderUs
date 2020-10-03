@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="fluid-container">
+<div class="">
+  <div class="col px-md-5">
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+    <div class="card">
+      <div class="card-header">
+        <h2>Make a new Room</h2>
+      </div>
+      <div class="card-body">
+        {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+        <form class="create" action="{% url 'chat:newRoom' %}" method="post">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="question_name">Username</label><br>
+            <input type="text" name="username" id="username" placeholder="username" required><br>
+          </div>
+
+          <div class="form-group">
+            <label for="option">Password</label><br>
+            <input type="password" id="password" name="password" placeholder="password" required><br>
+          </div>
+
+          <input class='btn btn-success' type="submit" value="signin">
+
+        </form>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+</div>
+{% endblock %}

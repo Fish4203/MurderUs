@@ -26,6 +26,16 @@
               <!-- urls for the nav bar -->
               <a href="{% url 'chat:index' %}" class="nav-item nav-link {% if additional_context.a == 'chat' %} active {% endif %}">Chat</a>
 
+              <div class="navbar-nav ml-auto ">
+              {% if request.user.is_authenticated %}
+                <a href="{% url 'chat:signout' %}" class="nav-item btn btn-secondary m-1">Signout of {{ request.user }}</a>
+              {% else %}
+              <div class="m-1">
+                <a class="btn btn-success " href="{% url 'chat:signin' %}">Signin</a>
+                <a class="btn btn-secondary" href="{% url 'chat:new_account' %}">Create Acount</a>
+              </div>
+              {% endif %}
+              </div>
 
             </div>
         </div>
