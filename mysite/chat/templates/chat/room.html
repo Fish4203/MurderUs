@@ -34,10 +34,6 @@
     </div>
 
 
-    <input class="form-group" id="chat-message-input" type="text" size="100"><br>
-    <input class='btn btn-success'  id="chat-message-submit" type="button" value="Send">
-    <input type="hidden" name="user" id="user" value="{{ request.user }}">
-
     {{ room_name|json_script:"room-name" }}
     <script>
         const gameID = JSON.parse(document.getElementById('room-name').textContent);
@@ -90,12 +86,12 @@
 
               } else if (data.gameInfo.status == 'running') {
                 document.querySelector('#status').innerHTML = (
-                  '<p>the game has begun </p> <input class="btn btn-success"  id="meating" type="button" value="call a meating">'
+                  '<p>the game has begun </p> <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="call a meating">'
                 );
 
               } else if (data.gameInfo.status == 'meating') {
                 document.querySelector('#status').innerHTML =
-                '<input class="form-group" id="person" type="text" ><br><input class="btn btn-success"  id="vote" type="button" value="Vote">';
+                '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote"><input type="hidden" name="user" id="user" value="{{ request.user }}">';
               }
               // that was a lot
 
@@ -114,12 +110,6 @@
             console.error('Chat socket closed unexpectedly');
         };
 
-        document.querySelector('#chat-message-input').focus();
-        document.querySelector('#chat-message-input').onkeyup = function(e) {
-            if (e.keyCode === 13) {  // enter, return
-                document.querySelector('#chat-message-submit').click();
-            }
-        };
 
         document.querySelector('#kill').onclick = function(e) {
           chatSocket.send(JSON.stringify({
@@ -136,15 +126,24 @@
           }));
         };
 
-        document.querySelector('#chat-message-submit').onclick = function(e) {
-            const messageInputDom = document.querySelector('#chat-message-input');
+        function meatingfunction() {
+          console.log('meatingfunction clicked')
+          chatSocket.send(JSON.stringify({
+              'role': 'meating',
+              'gameID': gameID
+          }));
+        };
+
+
+        function votefunction() {
+            const messageInputDom = document.querySelector('#person');
             const messageInputUser = document.querySelector('#user');
             const user = messageInputUser.value;
-            const message = messageInputDom.value;
+            const person = messageInputDom.value;
             chatSocket.send(JSON.stringify({
-                'message': message, 'user': user
+                'person': person, 'user': user, 'gameID': gameID, 'role': 'vote'
             }));
-            messageInputDom.value = '';
+            document.querySelector('#status').innerHTML = '<p>you have voted</p>';
         };
     </script>
 

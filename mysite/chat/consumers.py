@@ -5,6 +5,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from .models import *
 import random
+import operator
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -66,6 +67,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        elif text_data_json['role'] == 'meating':
+            # a meating is called
+            await database_sync_to_async(self.meating)(text_data_json)
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'message',
+                    'role': 'meating',
+                }
+            )
+
+        elif text_data_json['role'] == 'vote':
+            # a vote is cast
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'message',
+                    'role': 'voted',
+                    'user': text_data_json['user'],
+                    'result': await database_sync_to_async(self.vote)(text_data_json)
+                }
+            )
+
+
         elif text_data_json['role'] == 'gameInfo':
             # sends game info to given user
             await self.send(text_data=json.dumps({
@@ -81,10 +107,45 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
 
 
+
+
     # Receive message from room group
     async def message(self, event):
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
+
+    def meating(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+
+        game.status = 'meating'
+        game.save()
+
+        self.votes = {player.name:0 for player in game.players.all()}
+        self.voted = []
+
+    def vote(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+
+        if game.status == 'meating' and text_data_json['user'] not in self.voted:
+            self.votes[text_data_json['person']] += 1
+
+            voted.append(text_data_json['user'])
+
+            if len(game.players.filter(aliveness=1)) == len(self.voted):
+                elimenated = max(self.votes.iteritems(), key=operator.itemgetter(1))[0]
+
+                game.status = 'running'
+                try:
+                    game.players.get(name=elimenated).aliveness = 0
+                    game.save()
+
+                    return 1
+                except:
+                    game.save()
+                    return 1
+
+            return 0
+
 
     def startGame(self, text_data_json, numimp=2):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
