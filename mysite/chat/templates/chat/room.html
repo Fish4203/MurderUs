@@ -16,8 +16,8 @@
       <p>TaskProgress</p>
     </div>
 
-    <div id="meating" class="">
-      <p>meating</p>
+    <div id="status" class="">
+      <p>status</p>
     </div>
 
     <div id="PlayerInfo" class="">
@@ -28,6 +28,9 @@
       <p>Tasks</p>
     </div>
 
+    <div id="Players" class="">
+      <p>players</p>
+    </div>
 
 
     <input class="form-group" id="chat-message-input" type="text" size="100"><br>
@@ -48,27 +51,51 @@
 
         chatSocket.onopen = function(e) {
           chatSocket.send(JSON.stringify({
-              'role': 'new',
+              'role': 'initial',
               'user': '{{ request.user }}',
-              'gameID': gameID 
+              'gameID': gameID
           }));
         };
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
 
-            if (data.user == '{{ request.user }}') {
-              document.querySelector('#chat-log').innerHTML +=
-              ('<div class="alert alert-primary">' +
-              data.message + ' <div class="float-right"> ' + data.user
-              + '</div> </div> ');
-            } else {
-              document.querySelector('#chat-log').innerHTML +=  (
-              '<div class="alert alert-dark">' +
-              data.message + ' <div class="float-right"> ' + data.user
-              + '</div> </div>');
+            console.log(data);
+
+            if (data.gameInfo.status == 'lobby') {
+              document.querySelector('#status').innerHTML = '<p>game is currently in the lobby phase tasks and roles are yet to be determined</p> <input class="btn btn-success"  id="start" type="button" value="Start">';
+
+              document.querySelector('#PlayerInfo').innerHTML = 'your role is yet to be determined';
+              document.querySelector('#Tasks').innerHTML = 'tasks are yet to be determined';
+              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
+            } else if (data.gameInfo.status == 'running') {
+              document.querySelector('#status').innerHTML = '<p>the game has begun </p> <input class="btn btn-success"  id="meating" type="button" value="call a meating">';
+
+              document.querySelector('#PlayerInfo').innerHTML =
+              (
+              '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
+              );
+              document.querySelector('#Tasks').innerHTML = data.tasks;
+              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
+            } else if (data.gameInfo.status == 'meating') {
+              document.querySelector('#status').innerHTML =
+              '<input class="form-group" id="person" type="text" ><br><input class="btn btn-success"  id="vote" type="button" value="Vote">';
+
+              document.querySelector('#PlayerInfo').innerHTML =
+              (
+              '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
+              );
+              document.querySelector('#Tasks').innerHTML = 'you cant do tasks rn';
+              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
             }
 
+            if (data.playerInfo.role == 'imp') {
+              document.querySelector('#Players').innerHTML = '<input class="form-group" id="person-kill" type="text" ><br><input class="btn btn-success"  id="kill" type="button" value="kill">';
+            }
+
+            if (data.role == 'players') {
+              document.querySelector('#Players').innerHTML = data.players;
+            }
 
         };
 
@@ -81,6 +108,27 @@
             if (e.keyCode === 13) {  // enter, return
                 document.querySelector('#chat-message-submit').click();
             }
+        };
+
+        document.querySelector('#kill').onclick = function(e) {
+          chatSocket.send(JSON.stringify({
+              'role': 'start',
+              'gameID': gameID
+          }));
+        };
+
+        document.querySelector('#Start').onclick = function(e) {
+          chatSocket.send(JSON.stringify({
+              'role': 'start',
+              'gameID': gameID
+          }));
+        };
+
+        document.querySelector('#start').onclick = function(e) {
+          chatSocket.send(JSON.stringify({
+              'role': 'start',
+              'gameID': gameID
+          }));
         };
 
         document.querySelector('#chat-message-submit').onclick = function(e) {

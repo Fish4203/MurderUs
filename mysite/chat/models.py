@@ -11,6 +11,9 @@ class Task(models.Model):
     var2 = models.CharField(max_length=200)
     var3 = models.CharField(max_length=200)
 
+    def __str__(self):
+        return self.type
+
 class Player(models.Model):
     name = models.CharField(max_length=200)
     aliveness = models.IntegerField()
@@ -18,11 +21,14 @@ class Player(models.Model):
     tasks = models.ManyToManyField(Task)
     role = models.CharField(max_length=200)
 
+    def __str__(self):
+        return self.name
+
 class Game(models.Model):
     gameId = models.IntegerField()
-    meating = models.IntegerField()
+    status = models.CharField(max_length=200)
     tasks = models.ManyToManyField(Task)
     players = models.ManyToManyField(Player)
 
     def __str__(self):
-        return self.id
+        return str(self.gameId)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-
+from .models import *
 # Create your views here.
 
 
@@ -9,26 +9,12 @@ def index(request):
     return render(request, 'chat/index.html', context)
 
 def room(request, room_name):
+    if len(Game.objects.filter(gameId=room_name)) == 0:
+        game = Game(gameId=room_name, status='lobby')
+        game.save()
+
     context = {"additional_context": {'a': 'chat'}, 'room_name': room_name}
     return render(request, 'chat/room.html', context)
-
-def newRoom(request, room_name):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect('chat:index')
-        else:
-            context = {'error_message': 'could not authentecate account'}
-            return render(request, 'chat/signin.html', context)
-
-    elif request.method == 'GET':
-        context = {"additional_context": {'a': 'chat'}, 'room_name': room_name}
-        return render(request, 'chat/newRoom.html', context)
-
 
 def signin(request):
     if request.method == 'POST':
