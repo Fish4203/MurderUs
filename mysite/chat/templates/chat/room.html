@@ -17,7 +17,8 @@
     </div>
 
     <div id="status" class="">
-      <p>status</p>
+      <p>Once there are enough players press start</p>
+      <a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>
     </div>
 
     <div id="PlayerInfo" class="">
@@ -63,21 +64,25 @@
             console.log(data);
 
             if (data.role == 'players') {
+              console.log('players');
               chatSocket.send(JSON.stringify({
                   'role': 'gameInfo',
                   'gameID': gameID
               }));
             } else if (data.role == 'start') {
+              console.log('start');
               chatSocket.send(JSON.stringify({
                   'role': 'gameInfo',
                   'gameID': gameID
               }));
               chatSocket.send(JSON.stringify({
                   'role': 'playerInfo',
+                  'user': '{{ request.user.id }}',
                   'gameID': gameID
               }));
             } else if (data.role == 'gameInfo') {
-              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
+              console.log('game info');
+              document.querySelector('#TaskProgress').innerHTML = data.gameInfo.taskProgres;
               document.querySelector('#Players').innerHTML = data.gameInfo.players;
               // this is going to be a lot
 
@@ -95,22 +100,14 @@
               // that was a lot
 
             } else if (data.role == 'playerInfo') {
+              console.log('player info');
               document.querySelector('#PlayerInfo').innerHTML =
               (
               '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
               );
 
-              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks; 
+              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks;
             }
-
-
-
-
-
-            if (data.playerInfo.role == 'imp') {
-              document.querySelector('#Players').innerHTML = '<input class="form-group" id="person-kill" type="text" ><br><input class="btn btn-success"  id="kill" type="button" value="kill">';
-            }
-
         };
 
         chatSocket.onclose = function(e) {
@@ -131,14 +128,8 @@
           }));
         };
 
-        document.querySelector('#Start').onclick = function(e) {
-          chatSocket.send(JSON.stringify({
-              'role': 'start',
-              'gameID': gameID
-          }));
-        };
-
-        document.querySelector('#start').onclick = function(e) {
+        function startfunction() {
+          console.log('start clicked')
           chatSocket.send(JSON.stringify({
               'role': 'start',
               'gameID': gameID

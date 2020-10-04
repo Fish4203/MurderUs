@@ -88,25 +88,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def startGame(self, text_data_json, numimp=2):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-
         for i in range(numimp):
             bp = random.choice(game.players.all())
             bp.role = 'imp'
 
-            bp.tasks.add(Tasks.objects.filter(type='bad'))
-
+            for task in Task.objects.filter(type='bad'):
+                bp.tasks.add(task)
             bp.save()
-        game.tasks.add(Tasks.objects.filter(type='bad'))
 
-        gtasks = Tasks.objects.filter(type='good')
+        for task in Task.objects.filter(type='bad'):
+            game.tasks.add(task)
 
+        gtasks = Task.objects.filter(type='good')
         for gp in game.players.filter(role='in'):
             gt = random.choice(gtasks)
             gp.tasks.add(gt)
             game.tasks.add(gt)
 
             gp.save()
-
         game.status = 'running'
 
         game.save()
@@ -122,15 +121,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def playerInfo(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-        player = game.players.filter(name=text_data_json['user'])
+        player = game.players.filter(name=User.objects.get(id=text_data_json['user']).username)
 
         if len(player) != 0:
             player = player[0]
 
             tasks = [{
                 'doneness': task.doneness,
-                'type': task.type 
-            } for task in player.tasks]
+                'type': task.type
+            } for task in player.tasks.all()]
 
             out = {
                 'name': player.name,
@@ -147,7 +146,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
 
         if len(game.tasks.all()) != 0:
-            taskProgres = len(game.tasks.filter(doneness==1)) / len(game.tasks.all())
+            taskProgres = len(game.tasks.filter(doneness=1)) / len(game.tasks.all())
         else:
             taskProgres = 0
 
