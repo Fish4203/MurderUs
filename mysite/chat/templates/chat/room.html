@@ -62,39 +62,53 @@
 
             console.log(data);
 
-            if (data.gameInfo.status == 'lobby') {
-              document.querySelector('#status').innerHTML = '<p>game is currently in the lobby phase tasks and roles are yet to be determined</p> <input class="btn btn-success"  id="start" type="button" value="Start">';
-
-              document.querySelector('#PlayerInfo').innerHTML = 'your role is yet to be determined';
-              document.querySelector('#Tasks').innerHTML = 'tasks are yet to be determined';
+            if (data.role == 'players') {
+              chatSocket.send(JSON.stringify({
+                  'role': 'gameInfo',
+                  'gameID': gameID
+              }));
+            } else if (data.role == 'start') {
+              chatSocket.send(JSON.stringify({
+                  'role': 'gameInfo',
+                  'gameID': gameID
+              }));
+              chatSocket.send(JSON.stringify({
+                  'role': 'playerInfo',
+                  'gameID': gameID
+              }));
+            } else if (data.role == 'gameInfo') {
               document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
-            } else if (data.gameInfo.status == 'running') {
-              document.querySelector('#status').innerHTML = '<p>the game has begun </p> <input class="btn btn-success"  id="meating" type="button" value="call a meating">';
+              document.querySelector('#Players').innerHTML = data.gameInfo.players;
+              // this is going to be a lot
 
+              if (data.gameInfo.status == 'lobby') {
+
+              } else if (data.gameInfo.status == 'running') {
+                document.querySelector('#status').innerHTML = (
+                  '<p>the game has begun </p> <input class="btn btn-success"  id="meating" type="button" value="call a meating">'
+                );
+
+              } else if (data.gameInfo.status == 'meating') {
+                document.querySelector('#status').innerHTML =
+                '<input class="form-group" id="person" type="text" ><br><input class="btn btn-success"  id="vote" type="button" value="Vote">';
+              }
+              // that was a lot
+
+            } else if (data.role == 'playerInfo') {
               document.querySelector('#PlayerInfo').innerHTML =
               (
               '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
               );
-              document.querySelector('#Tasks').innerHTML = data.tasks;
-              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
-            } else if (data.gameInfo.status == 'meating') {
-              document.querySelector('#status').innerHTML =
-              '<input class="form-group" id="person" type="text" ><br><input class="btn btn-success"  id="vote" type="button" value="Vote">';
 
-              document.querySelector('#PlayerInfo').innerHTML =
-              (
-              '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
-              );
-              document.querySelector('#Tasks').innerHTML = 'you cant do tasks rn';
-              document.querySelector('#taskProgres').innerHTML = data.gameInfo.taskProgres;
+              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks; 
             }
+
+
+
+
 
             if (data.playerInfo.role == 'imp') {
               document.querySelector('#Players').innerHTML = '<input class="form-group" id="person-kill" type="text" ><br><input class="btn btn-success"  id="kill" type="button" value="kill">';
-            }
-
-            if (data.role == 'players') {
-              document.querySelector('#Players').innerHTML = data.players;
             }
 
         };
