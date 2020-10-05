@@ -18,7 +18,7 @@
 
     <div id="status" class="">
       <p>Once there are enough players press start</p>
-      <a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>
+      <a class="btn btn-success"  id="start" >Start</a>
     </div>
 
     <div id="PlayerInfo" class="">
@@ -47,6 +47,7 @@
         );
 
         chatSocket.onopen = function(e) {
+          console.log('open');
           chatSocket.send(JSON.stringify({
               'role': 'initial',
               'user': '{{ request.user }}',
@@ -75,6 +76,13 @@
               console.log('voted');
               getInfo();
 
+            } else if (data.role == 'kill') {
+              console.log('voted');
+              if (data.result == 1) {
+                document.querySelector('#Tasks').innerHTML += 'you kill a person';
+              } else {
+                document.querySelector('#Tasks').innerHTML += 'wrong tag nice try';
+              }
             }
 
             if ('gameInfo' in data) {
@@ -84,6 +92,7 @@
               // this is going to be a lot
 
               if (data.gameInfo.status == 'lobby') {
+                //document.querySelector('#status').innerHTML = '<p>Once there are enough players press start</p><a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>'
 
               } else if (data.gameInfo.status == 'running') {
                 document.querySelector('#status').innerHTML = (
@@ -92,7 +101,7 @@
 
               } else if (data.gameInfo.status == 'meating') {
                 document.querySelector('#status').innerHTML =
-                '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote"><input type="hidden" name="user" id="user" value="{{ request.user }}">';
+                '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote">';
               }
               // that was a lot
             }
@@ -109,6 +118,12 @@
               );
 
               document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks;
+
+              if (data.playerInfo.role == 'imp') {
+                document.querySelector('#Tasks').innerHTML += (
+                  '<input class="form-group" id="victem" type="text"><input class="form-group" id="victem-tag" type="text"><br><input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">'
+                )
+              }
             }
         }
 
@@ -116,13 +131,15 @@
             console.error('Chat socket closed unexpectedly');
         };
 
-
-        document.querySelector('#kill').onclick = function(e) {
+        document.querySelector('#start').onclick = function(e) {
+          console.log('start clicked')
           chatSocket.send(JSON.stringify({
               'role': 'start',
+              'user': '{{ request.user }}',
               'gameID': gameID
           }));
         };
+
 
         function getInfo() {
           chatSocket.send(JSON.stringify({
@@ -136,15 +153,6 @@
           }));
         }
 
-        function startfunction() {
-          console.log('start clicked')
-          chatSocket.send(JSON.stringify({
-              'role': 'start',
-              'user': '{{ request.user }}',
-              'gameID': gameID
-          }));
-        };
-
         function meatingfunction() {
           console.log('meatingfunction clicked')
           chatSocket.send(JSON.stringify({
@@ -154,6 +162,16 @@
           }));
         };
 
+
+        function killfunction() {
+            const victemdom = document.querySelector('#victem');
+            const victem = victemdom.value;
+            const tagdom = document.querySelector('#victem-tag');
+            const tag = tagdom.value;
+            chatSocket.send(JSON.stringify({
+                'victem': victem, 'tag': tag, 'user': '{{ request.user }}', 'gameID': gameID, 'role': 'kill'
+            }));
+        };
 
         function votefunction() {
             const messageInputDom = document.querySelector('#person');

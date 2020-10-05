@@ -90,6 +90,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        elif text_data_json['role'] == 'kill':
+            # kill a human
+
+            await self.send(text_data=json.dumps({
+                'role': 'kill',
+                'result': await database_sync_to_async(self.kill)(text_data_json)
+            }))
+
 
         elif text_data_json['role'] == 'gameInfo':
             # sends game info to given user
@@ -161,7 +169,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return 0
 
 
-    def startGame(self, text_data_json, numimp=2):
+    def startGame(self, text_data_json, numimp=1):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
         for i in range(numimp):
             bp = random.choice(game.players.all())
@@ -187,11 +195,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def kill(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-        victem = game.players.filter(name=text_data_json['victemName']).filter(tag=text_data_json['victemTag'])
+        victem = game.players.filter(name=text_data_json['victem']).filter(tag=text_data_json['tag'])
 
         if len(victem) == 1:
-            victem.aliveness = 0
-            victem.save()
+            victem[0].aliveness = 0
+            victem[0].save()
+
+            return 1
+        return 0
 
 
     def playerInfo(self, text_data_json):
