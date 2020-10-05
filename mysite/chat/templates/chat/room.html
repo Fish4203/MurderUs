@@ -61,22 +61,23 @@
 
             if (data.role == 'players') {
               console.log('players');
-              chatSocket.send(JSON.stringify({
-                  'role': 'gameInfo',
-                  'gameID': gameID
-              }));
+              getInfo();
+
             } else if (data.role == 'start') {
               console.log('start');
-              chatSocket.send(JSON.stringify({
-                  'role': 'gameInfo',
-                  'gameID': gameID
-              }));
-              chatSocket.send(JSON.stringify({
-                  'role': 'playerInfo',
-                  'user': '{{ request.user.id }}',
-                  'gameID': gameID
-              }));
-            } else if (data.role == 'gameInfo') {
+              getInfo();
+
+            } else if (data.role == 'meating') {
+              console.log('meating');
+              getInfo();
+
+            } else if (data.role == 'voted') {
+              console.log('voted');
+              getInfo();
+
+            }
+
+            if ('gameInfo' in data) {
               console.log('game info');
               document.querySelector('#TaskProgress').innerHTML = data.gameInfo.taskProgres;
               document.querySelector('#Players').innerHTML = data.gameInfo.players;
@@ -94,9 +95,14 @@
                 '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote"><input type="hidden" name="user" id="user" value="{{ request.user }}">';
               }
               // that was a lot
+            }
 
-            } else if (data.role == 'playerInfo') {
+            if ('playerInfo' in data) {
               console.log('player info');
+              if (data.playerInfo.voted == 1) {
+                document.querySelector('#status').innerHTML = '<p>you have voted</p>';
+              };
+
               document.querySelector('#PlayerInfo').innerHTML =
               (
               '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
@@ -104,7 +110,7 @@
 
               document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks;
             }
-        };
+        }
 
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
@@ -118,10 +124,23 @@
           }));
         };
 
+        function getInfo() {
+          chatSocket.send(JSON.stringify({
+              'role': 'gameInfo',
+              'gameID': gameID
+          }));
+          chatSocket.send(JSON.stringify({
+              'role': 'playerInfo',
+              'user': '{{ request.user }}',
+              'gameID': gameID
+          }));
+        }
+
         function startfunction() {
           console.log('start clicked')
           chatSocket.send(JSON.stringify({
               'role': 'start',
+              'user': '{{ request.user }}',
               'gameID': gameID
           }));
         };
@@ -130,6 +149,7 @@
           console.log('meatingfunction clicked')
           chatSocket.send(JSON.stringify({
               'role': 'meating',
+              'user': '{{ request.user }}',
               'gameID': gameID
           }));
         };
@@ -137,11 +157,9 @@
 
         function votefunction() {
             const messageInputDom = document.querySelector('#person');
-            const messageInputUser = document.querySelector('#user');
-            const user = messageInputUser.value;
             const person = messageInputDom.value;
             chatSocket.send(JSON.stringify({
-                'person': person, 'user': user, 'gameID': gameID, 'role': 'vote'
+                'person': person, 'user': '{{ request.user }}', 'gameID': gameID, 'role': 'vote'
             }));
             document.querySelector('#status').innerHTML = '<p>you have voted</p>';
         };

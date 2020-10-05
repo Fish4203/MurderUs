@@ -80,13 +80,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         elif text_data_json['role'] == 'vote':
             # a vote is cast
+            await database_sync_to_async(self.vote)(text_data_json)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'voted',
                     'user': text_data_json['user'],
-                    'result': await database_sync_to_async(self.vote)(text_data_json)
                 }
             )
 
@@ -142,16 +142,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             if len(game.players.filter(aliveness=1).filter(voted=0)) == 0:
                 elimenated = game.players.filter(aliveness=1).order_by('votes')[len(game.players.filter(aliveness=1)) - 1]
-                
+
                 try:
                     elimenated.aliveness = 0
                     elimenated.save()
                 except:
                     pass
 
-                for playe in game.players.filter(aliveness=1):
+                for playe in game.players.all():
                     playe.voted = 0
                     playe.votes = 0
+                    playe.save()
 
                 game.status = 'running'
                 game.save()
@@ -195,7 +196,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def playerInfo(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-        player = game.players.filter(name=User.objects.get(id=text_data_json['user']).username)
+        player = game.players.filter(name=text_data_json['user'])
 
         if len(player) != 0:
             player = player[0]
@@ -210,7 +211,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'aliveness': player.aliveness,
                 'tag': player.tag,
                 'role': player.role,
-                'tasks': tasks
+                'tasks': tasks,
+                'votes': player.votes,
+                'voted': player.voted
             }
 
         return out
