@@ -70,7 +70,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         elif text_data_json['role'] == 'meating':
             # a meating is called
             await database_sync_to_async(self.meating)(text_data_json)
-
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -120,29 +119,43 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game.status = 'meating'
         game.save()
 
-        self.votes = {player.name:0 for player in game.players.all()}
-        self.voted = []
-
     def vote(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        player = game.players.get(name=text_data_json['user'])
+        person = game.players.get(name=text_data_json['person'])
 
-        if game.status == 'meating' and text_data_json['user'] not in self.voted:
-            self.votes[text_data_json['person']] += 1
 
-            voted.append(text_data_json['user'])
 
-            if len(game.players.filter(aliveness=1)) == len(self.voted):
-                elimenated = max(self.votes.iteritems(), key=operator.itemgetter(1))[0]
+        if game.status == 'meating' and player.voted == 0:
+            if text_data_json['person'] == text_data_json['user']:
+                player.votes += 1
+                player.voted = 1
+                player.save()
+            else:
+                person.votes += 1
+                player.voted = 1
+
+                player.save()
+                person.save()
+
+            game.save()
+
+            if len(game.players.filter(aliveness=1).filter(voted=0)) == 0:
+                elimenated = game.players.filter(aliveness=1).order_by('votes')[len(game.players.filter(aliveness=1)) - 1]
+                
+                try:
+                    elimenated.aliveness = 0
+                    elimenated.save()
+                except:
+                    pass
+
+                for playe in game.players.filter(aliveness=1):
+                    playe.voted = 0
+                    playe.votes = 0
 
                 game.status = 'running'
-                try:
-                    game.players.get(name=elimenated).aliveness = 0
-                    game.save()
-
-                    return 1
-                except:
-                    game.save()
-                    return 1
+                game.save()
+                return 1
 
             return 0
 
@@ -224,7 +237,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         player = game.players.filter(name=text_data_json['user'])
 
         if len(player) == 0:
-            player = Player(name=text_data_json['user'], aliveness=1, tag=random.randint(0,2000), role='in')
+            player = Player(name=text_data_json['user'], aliveness=1, tag=random.randint(0,2000), role='in', votes=0, voted=0)
             player.save()
         else:
             player = player[0]

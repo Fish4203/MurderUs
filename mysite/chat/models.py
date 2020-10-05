@@ -20,6 +20,8 @@ class Player(models.Model):
     tag = models.IntegerField()
     tasks = models.ManyToManyField(Task)
     role = models.CharField(max_length=200)
+    votes = models.IntegerField()
+    voted = models.IntegerField()
 
     def __str__(self):
         return self.name
