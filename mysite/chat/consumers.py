@@ -7,6 +7,59 @@ from .models import *
 import random
 import operator
 
+def sabotageTask():
+    tasks = []
+    tasks.append(Task(
+        doneness=0,
+        type='sabotage',
+        name='sabotage power',
+        codefinal='fish',
+        code1='12',
+        code2='34',
+        location1='power box',
+        location2='eletric',
+        location3='controle'
+        ))
+
+    tasks.append(Task(
+        doneness=0,
+        type='sabotage',
+        name='disable fence',
+        codefinal='tree',
+        code1='12',
+        code2='34',
+        location1='controle',
+        location2='tree',
+        location3='fence'
+        ))
+
+    return random.choice(tasks)
+
+def goodTask():
+    tasks = []
+    tasks.append(Task(
+        doneness=0,
+        type='good',
+        name='minigame 1',
+        codefinal='mini1',
+        location1='power box',
+        ))
+
+    tasks.append(Task(
+        doneness=0,
+        type='good',
+        name='enter codes',
+        codefinal='1111',
+        code1='1234',
+        code2='5678',
+        location1='controle',
+        location2='tree',
+        location3='fence'
+        ))
+
+    return random.choice(tasks)
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -75,6 +128,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'message',
                     'role': 'meating',
+                }
+            )
+
+        elif text_data_json['role'] == 'submitTask':
+            # a meating is called
+            await self.send(text_data=json.dumps({
+                'role': 'taskResult',
+                'result': await database_sync_to_async(self.submitTask)(text_data_json)
+            }))
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'message',
+                    'role': 'taskSubmited',
                 }
             )
 
@@ -169,29 +237,55 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return 0
 
 
-    def startGame(self, text_data_json, numimp=1):
+    def startGame(self, text_data_json, tasknum=2, numimp=1,):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
         for i in range(numimp):
             bp = random.choice(game.players.all())
             bp.role = 'imp'
 
-            for task in Task.objects.filter(type='bad'):
+            for i in range(tasknum):
+                task = sabotageTask()
+                task.save()
+
                 bp.tasks.add(task)
+                game.tasks.add(task)
+
             bp.save()
 
-        for task in Task.objects.filter(type='bad'):
-            game.tasks.add(task)
 
-        gtasks = Task.objects.filter(type='good')
         for gp in game.players.filter(role='in'):
-            gt = random.choice(gtasks)
-            gp.tasks.add(gt)
-            game.tasks.add(gt)
+            for i in range(tasknum):
+                task = goodTask()
+                task.save()
+
+                gp.tasks.add(task)
+                game.tasks.add(task)
 
             gp.save()
-        game.status = 'running'
 
+        game.status = 'running'
         game.save()
+
+
+    def submitTask(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        task = game.tasks.get(id=text_data_json['taskID'])
+
+        if task.codefinal == text_data_json['code']:
+            task.doneness = 1
+            task.save()
+            return 2
+        elif task.code1 == text_data_json['code']:
+            task.code1 = ''
+            task.save()
+            return 1
+        elif task.code2 == text_data_json['code']:
+            task.code2 = ''
+            task.save()
+            return 1
+        else:
+            return 0
+
 
     def kill(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
@@ -214,7 +308,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             tasks = [{
                 'doneness': task.doneness,
-                'type': task.type
+                'type': task.type,
+                'name': task.name,
+                'id': task.id,
+                'location1': task.location1,
+                'location2': task.location2,
+                'location3': task.location3
             } for task in player.tasks.all()]
 
             out = {

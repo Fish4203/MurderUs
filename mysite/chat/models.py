@@ -6,13 +6,18 @@ from django.contrib.auth.models import User
 class Task(models.Model):
     doneness = models.IntegerField()
     type = models.CharField(max_length=200)
-    code = models.IntegerField()
-    var1 = models.CharField(max_length=200)
-    var2 = models.CharField(max_length=200)
-    var3 = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
+
+    codefinal = models.CharField(max_length=200, default='', blank=True)
+    code1 = models.CharField(max_length=200, default='', blank=True)
+    code2 = models.CharField(max_length=200, default='', blank=True)
+
+    location1 = models.CharField(max_length=200, default='', blank=True)
+    location2 = models.CharField(max_length=200, default='', blank=True)
+    location3 = models.CharField(max_length=200, default='', blank=True)
 
     def __str__(self):
-        return self.type
+        return self.name
 
 class Player(models.Model):
     name = models.CharField(max_length=200)
@@ -31,6 +36,7 @@ class Game(models.Model):
     status = models.CharField(max_length=200)
     tasks = models.ManyToManyField(Task)
     players = models.ManyToManyField(Player)
+    auth = models.CharField(max_length=200, default='', blank=True)
 
     def __str__(self):
         return str(self.gameId)
