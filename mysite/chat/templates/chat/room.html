@@ -117,7 +117,7 @@
               '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
               );
 
-              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks[0].type + data.playerInfo.tasks[0].doneness+ data.playerInfo.tasks[0].name+ data.playerInfo.tasks[0].location1+ data.playerInfo.tasks[0].location2+ data.playerInfo.tasks[0].location3 + '<input class="form-group" id="taskID" type="hiden" value='+data.playerInfo.tasks[0].id+'><input class="form-group" id="code" type="text"><br><input class="btn btn-success" onclick="taskfunction()" id="task" type="button" value="Submit">';
+              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks[0].type + data.playerInfo.tasks[0].doneness+ data.playerInfo.tasks[0].name+ data.playerInfo.tasks[0].location[data.playerInfo.tasks[0].level]+ data.playerInfo.tasks[0].level + '<input id="taskID" type="hidden" value='+data.playerInfo.tasks[0].id+'><input class="form-group" id="code" type="text"><br><input class="btn btn-success" onclick="taskfunction()" id="task" type="button" value="Submit">';
 
               if (data.playerInfo.role == 'imp') {
                 document.querySelector('#Tasks').innerHTML += (

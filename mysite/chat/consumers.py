@@ -311,9 +311,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': task.type,
                 'name': task.name,
                 'id': task.id,
-                'location1': task.location1,
-                'location2': task.location2,
-                'location3': task.location3
+                'location': [task.location1, task.location2, task.location3],
+                'level': 2 if task.code2 == '' else 1 if task.code1 == '' else 0
             } for task in player.tasks.all()]
 
             out = {
