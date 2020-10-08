@@ -10,7 +10,7 @@
 - ask people for help
 - commenting
 - documentation
-
+- fix task submition
 
 ## how to run it
 docker run -p 6379:6379 -d redis:5
