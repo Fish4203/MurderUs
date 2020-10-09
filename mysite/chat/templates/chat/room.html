@@ -124,7 +124,13 @@
               '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
               );
 
-              document.querySelector('#Tasks').innerHTML = data.playerInfo.tasks[0].type + data.playerInfo.tasks[0].doneness+ data.playerInfo.tasks[0].name+ data.playerInfo.tasks[0].location[data.playerInfo.tasks[0].level]+ data.playerInfo.tasks[0].level
+              var tasks = ''
+              for (const task in data.playerInfo.tasks) {
+                tasks += '<p>' + data.playerInfo.tasks[task].type + data.playerInfo.tasks[task].doneness + data.playerInfo.tasks[task].name + '</p>' 
+              }
+
+              document.querySelector('#Tasks').innerHTML = tasks;
+
               if (data.playerInfo.role == 'imp') {
                 document.querySelector('#Tasks').innerHTML += (
                   '<input class="form-group" id="victem" type="text"><input class="form-group" id="victem-tag" type="text"><br><input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">'

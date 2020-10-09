@@ -234,6 +234,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
 
+
+    def startGame(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+
+        imposterAsign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['impnum']))], int(text_data_json['tasknum']))
+        rogeAssign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['rogenum']))], int(text_data_json['tasknum']))
+        inocentAssign(game.players.filter(role='na'), int(text_data_json['tasknum']))
+
+        for player in game.players.all():
+            for task in player.tasks.all():
+                game.tasks.add(task)
+
+        game.status = 'running'
+        game.save()
+
+
     def meating(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
 
@@ -281,20 +297,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             return 0
 
-
-    def startGame(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-
-        imposterAsign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['impnum']))], int(text_data_json['tasknum']))
-        rogeAssign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['rogenum']))], int(text_data_json['tasknum']))
-        inocentAssign(game.players.filter(role='na'), int(text_data_json['tasknum']))
-
-        for player in game.players.all():
-            for task in player.tasks.all():
-                game.tasks.add(task)
-
-        game.status = 'running'
-        game.save()
 
 
     def kill(self, text_data_json):
