@@ -7,7 +7,8 @@ from .models import *
 import random
 import operator
 
-def sabotageTask():
+
+def imposterAsign(players, tasknum):
     tasks = []
     tasks.append(Task(
         doneness=0,
@@ -33,9 +34,20 @@ def sabotageTask():
         location3='fence'
         ))
 
-    return random.choice(tasks)
 
-def goodTask():
+    for player in players:
+        player.role = 'imp'
+
+        for i in range(tasknum):
+            task = random.choice(tasks)
+            task.save()
+
+            player.tasks.add(task)
+
+        player.save()
+
+
+def rogeAssign(players, tasknum):
     tasks = []
     tasks.append(Task(
         doneness=0,
@@ -57,7 +69,54 @@ def goodTask():
         location3='fence'
         ))
 
-    return random.choice(tasks)
+
+    for player in players:
+        player.role = 'roge'
+
+        for i in range(tasknum):
+            task = random.choice(tasks)
+            task.save()
+
+            player.tasks.add(task)
+
+        player.save()
+
+
+def inocentAssign(players, tasknum):
+    tasks = []
+    tasks.append(Task(
+        doneness=0,
+        type='good',
+        name='minigame 1',
+        codefinal='mini1',
+        location1='power box',
+        ))
+
+    tasks.append(Task(
+        doneness=0,
+        type='good',
+        name='enter codes',
+        codefinal='1111',
+        code1='1234',
+        code2='5678',
+        location1='controle',
+        location2='tree',
+        location3='fence'
+        ))
+
+
+    for player in players:
+        player.role = 'in'
+
+        for i in range(tasknum):
+            task = random.choice(tasks)
+            task.save()
+
+            player.tasks.add(task)
+
+        player.save()
+
+
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -131,20 +190,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-        elif text_data_json['role'] == 'submitTask':
-            # a meating is called
-            await self.send(text_data=json.dumps({
-                'role': 'taskResult',
-                'result': await database_sync_to_async(self.submitTask)(text_data_json)
-            }))
-
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'message',
-                    'role': 'taskSubmited',
-                }
-            )
 
         elif text_data_json['role'] == 'vote':
             # a vote is cast
@@ -237,54 +282,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return 0
 
 
-    def startGame(self, text_data_json, tasknum=2, numimp=1,):
+    def startGame(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-        for i in range(numimp):
-            bp = random.choice(game.players.all())
-            bp.role = 'imp'
 
-            for i in range(tasknum):
-                task = sabotageTask()
-                task.save()
+        imposterAsign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['impnum']))], int(text_data_json['tasknum']))
+        rogeAssign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['rogenum']))], int(text_data_json['tasknum']))
+        inocentAssign(game.players.filter(role='na'), int(text_data_json['tasknum']))
 
-                bp.tasks.add(task)
+        for player in game.players.all():
+            for task in player.tasks.all():
                 game.tasks.add(task)
-
-            bp.save()
-
-
-        for gp in game.players.filter(role='in'):
-            for i in range(tasknum):
-                task = goodTask()
-                task.save()
-
-                gp.tasks.add(task)
-                game.tasks.add(task)
-
-            gp.save()
 
         game.status = 'running'
         game.save()
-
-
-    def submitTask(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
-        task = game.tasks.get(id=text_data_json['taskID'])
-
-        if task.codefinal == text_data_json['code']:
-            task.doneness = 1
-            task.save()
-            return 2
-        elif task.code1 == text_data_json['code']:
-            task.code1 = ''
-            task.save()
-            return 1
-        elif task.code2 == text_data_json['code']:
-            task.code2 = ''
-            task.save()
-            return 1
-        else:
-            return 0
 
 
     def kill(self, text_data_json):
@@ -349,7 +359,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         player = game.players.filter(name=text_data_json['user'])
 
         if len(player) == 0:
-            player = Player(name=text_data_json['user'], aliveness=1, tag=random.randint(0,2000), role='in', votes=0, voted=0)
+            player = Player(name=text_data_json['user'], aliveness=1, tag=random.randint(0,2000), role='na', votes=0, voted=0)
             player.save()
         else:
             player = player[0]

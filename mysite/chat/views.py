@@ -10,11 +10,13 @@ def index(request):
     return render(request, 'chat/index.html', context)
 
 def room(request, room_name):
+    start = 0
     if len(Game.objects.filter(gameId=room_name)) == 0:
         game = Game(gameId=room_name, status='lobby')
         game.save()
+        start = 1
 
-    context = {"additional_context": {'a': 'chat'}, 'room_name': room_name}
+    context = {"additional_context": {'a': 'chat'}, 'room_name': room_name, 'start': start}
     return render(request, 'chat/room.html', context)
 
 def getCode(request, level, id, auth=''):
@@ -22,30 +24,21 @@ def getCode(request, level, id, auth=''):
 
     if Game.objects.filter(tasks__id=id)[0].auth == auth:
         if level == 'final':
-            response = {
-                'code': task.codefinal,
-                'status': 1
-            }
+            task.doneness = 1
+            task.save()
+            response = {'status': 1}
         elif level == '1':
-            response = {
-                'code': task.code1,
-                'status': 1
-            }
+            task.code1 = ''
+            task.save()
+            response = {'status': 1}
         elif level == '2':
-            response = {
-                'code': task.code2,
-                'status': 1
-            }
+            task.code2 = ''
+            task.save()
+            response = {'status': 1}
         else:
-            response = {
-                'code': '',
-                'status': 0
-            }
+            response = {'status': 0}
     else:
-        response = {
-            'code': '',
-            'status': 0
-        }
+        response = {'status': 0}
 
     return JsonResponse(data=response)
 
