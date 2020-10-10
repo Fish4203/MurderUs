@@ -8,7 +8,8 @@ import random
 import operator
 
 
-def imposterAsign(players, tasknum):
+def imposterAsign(players, tasknum): # assigns all the players in the player list function with a rasndom set of bad tasks
+    # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
         doneness=0,
@@ -34,7 +35,7 @@ def imposterAsign(players, tasknum):
         location3='fence'
         ))
 
-
+    # assigns the role and tasks for eath player and then saves the player
     for player in players:
         player.role = 'imp'
 
@@ -47,7 +48,8 @@ def imposterAsign(players, tasknum):
         player.save()
 
 
-def rogeAssign(players, tasknum):
+def rogeAssign(players, tasknum): # assigns all the players in the player list function with a rasndom set of roge tasks
+# tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
         doneness=0,
@@ -69,7 +71,7 @@ def rogeAssign(players, tasknum):
         location3='fence'
         ))
 
-
+    # assigns the role and tasks for eath player and then saves the player
     for player in players:
         player.role = 'roge'
 
@@ -82,7 +84,8 @@ def rogeAssign(players, tasknum):
         player.save()
 
 
-def inocentAssign(players, tasknum):
+def inocentAssign(players, tasknum): # assigns all the players in the player list function with a rasndom set of good tasks
+    # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
         doneness=0,
@@ -104,7 +107,7 @@ def inocentAssign(players, tasknum):
         location3='fence'
         ))
 
-
+    # assigns the role and tasks for eath player and then saves the player
     for player in players:
         player.role = 'in'
 
@@ -118,9 +121,12 @@ def inocentAssign(players, tasknum):
 
 
 
-
+# this is the big kahona the big boy class that defines how the database interacts with the websocket and how the websocket interacts with the users
 class ChatConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
+
+    ### async functions interact with the user and the web sockets while but cant interact with a database
+    async def connect(self): # called when a user first connects to the server
+        # gets some names of the room
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
 
@@ -129,45 +135,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-
         await self.accept()
-        tree = await database_sync_to_async(self.get_name)()
-
-        await self.send(text_data=json.dumps({
-            'message': 'help me pls',
-            'user': 'self.user'
-        }))
-
-    def get_name(self):
-        out = []
-        for user in User.objects.all():
-            out.append(user.username)
-        return out
 
 
-
-    async def disconnect(self, close_code):
+    async def disconnect(self, close_code): # called when a websocket disconnects
         # Leave room group
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
 
-    # Receive message from WebSocket
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        if text_data_json['role'] == 'initial':
+
+    async def receive(self, text_data): # Receive message from WebSocket heres where the magice happens heres where the real code is writen
+        text_data_json = json.loads(text_data) # loads the data sent over by the user
+
+        if text_data_json['role'] == 'initial': # when a user first connects this is called
             # new player
             await database_sync_to_async(self.newPlayer)(text_data_json)
-
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'players',
                 }
-            )
-        elif text_data_json['role'] == 'start':
+            ) # sends a message to all users about the new player
+
+        elif text_data_json['role'] == 'start': # called when the game starts
             # the game starts
             await database_sync_to_async(self.startGame)(text_data_json)
 
@@ -177,9 +170,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'message',
                     'role': 'start',
                 }
-            )
+            )# sends a message to all users about the start of the game
 
-        elif text_data_json['role'] == 'meating':
+        elif text_data_json['role'] == 'meating': # called when a meating is called
             # a meating is called
             await database_sync_to_async(self.meating)(text_data_json)
             await self.channel_layer.group_send(
@@ -188,10 +181,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'message',
                     'role': 'meating',
                 }
-            )
+            ) # sends a message to all users about the meating
 
 
-        elif text_data_json['role'] == 'vote':
+        elif text_data_json['role'] == 'vote': # called when a user votes in a meating
             # a vote is cast
             await database_sync_to_async(self.vote)(text_data_json)
             await self.channel_layer.group_send(
@@ -201,42 +194,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'role': 'voted',
                     'user': text_data_json['user'],
                 }
-            )
+            ) # sends a message to all users that user has voted
 
-        elif text_data_json['role'] == 'kill':
+        elif text_data_json['role'] == 'kill': # called when some one dies
             # kill a human
 
             await self.send(text_data=json.dumps({
                 'role': 'kill',
                 'result': await database_sync_to_async(self.kill)(text_data_json)
-            }))
+            })) # sends a mesage to the killer wether or not they have killed the person
 
 
-        elif text_data_json['role'] == 'gameInfo':
+        elif text_data_json['role'] == 'getInfo': # called when a user wants info about the game
             # sends game info to given user
             await self.send(text_data=json.dumps({
                 'role': 'gameInfo',
-                'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json)
-            }))
-
-        elif text_data_json['role'] == 'playerInfo':
-            # sends player info to given user
-            await self.send(text_data=json.dumps({
-                'role': 'playerInfo',
+                'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json),
                 'playerInfo': await database_sync_to_async(self.playerInfo)(text_data_json)
-            }))
-
+            })) # sends the info about the game to the user who requested it
 
 
 
     # Receive message from room group
-    async def message(self, event):
+    async def message(self, event): # when a message needs to be sent the the whole room this function passes it on
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
 
 
-    def startGame(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+    ### regular function can talk to the database but not he web socket or the users
+    def startGame(self, text_data_json): # called when the game starts
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         imposterAsign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['impnum']))], int(text_data_json['tasknum']))
         rogeAssign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['rogenum']))], int(text_data_json['tasknum']))
@@ -251,13 +238,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     def meating(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         game.status = 'meating'
         game.save()
 
     def vote(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         player = game.players.get(name=text_data_json['user'])
         person = game.players.get(name=text_data_json['person'])
 
@@ -300,7 +287,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     def kill(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         victem = game.players.filter(name=text_data_json['victem']).filter(tag=text_data_json['tag'])
 
         if len(victem) == 1:
@@ -312,7 +299,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     def playerInfo(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         player = game.players.filter(name=text_data_json['user'])
 
         if len(player) != 0:
@@ -341,7 +328,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     def gameInfo(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         if len(game.tasks.all()) != 0:
             taskProgres = len(game.tasks.filter(doneness=1)) / len(game.tasks.all())
@@ -357,7 +344,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     def newPlayer(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         player = game.players.filter(name=text_data_json['user'])
 
         if len(player) == 0:

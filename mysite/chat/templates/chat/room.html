@@ -126,7 +126,7 @@
 
               var tasks = ''
               for (const task in data.playerInfo.tasks) {
-                tasks += '<p>' + data.playerInfo.tasks[task].type + data.playerInfo.tasks[task].doneness + data.playerInfo.tasks[task].name + '</p>' 
+                tasks += '<p>' + data.playerInfo.tasks[task].type + data.playerInfo.tasks[task].doneness + data.playerInfo.tasks[task].name + '</p>'
               }
 
               document.querySelector('#Tasks').innerHTML = tasks;
@@ -166,11 +166,7 @@
 
         function getInfo() {
           chatSocket.send(JSON.stringify({
-              'role': 'gameInfo',
-              'gameID': gameID
-          }));
-          chatSocket.send(JSON.stringify({
-              'role': 'playerInfo',
+              'role': 'getInfo',
               'user': '{{ request.user }}',
               'gameID': gameID
           }));
