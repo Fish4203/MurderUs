@@ -7,8 +7,6 @@
 - mini games and lots of them
 - commenting
 - documentation
-- rework the task compleation
-- add sign in for min games
 - add mini game urls 
 
 ## how to run it

@@ -20,40 +20,44 @@ def room(request, room_name): # room view
     context = {"additional_context": {'a': 'chat'}, 'room_name': room_name, 'start': start}
     return render(request, 'chat/room.html', context)
 
-def submitTask(request, level, id, auth=''):
+def submitTask(request, auth=''):
     # used by the tasks to submit a compleated task
-    task = Task.objects.get(id=id)
+    task = Task.objects.get(id=request.POST['id'])
 
     # checks if the right authorisation is used
-    if Game.objects.filter(tasks__id=id)[0].auth == auth:
+    if Game.objects.filter(tasks__id=request.POST['id'])[0].auth == auth:
         # changes the level the task is on
-        task.doneness = level
+        task.doneness = request.POST['level']
         task.save()
-        response = {'status': level}
+        response = {'status': request.POST['level']}
     else:
         response = {'status': 0}
 
     return JsonResponse(data=response) # responds with wether or not the right codes have been entered
 
-def getTask(request, location, username, tag, auth=''):
-    # used to sign users in and give them thr right task
-    player = Player.objects.filter(name=username).get(tag=tag)
+def getTask(request, location, auth=''):
+    if request.method == 'POST':
+        # used to sign users in and give them thr right task
+        player = Player.objects.filter(name=request.POST['username']).get(tag=request.POST['Tag'])
 
-    # find a task at this location
-    if len(player.tasks.filter(location1=location)) > 0:
-        task = player.tasks.filter(location1=location)[0]
-    elif len(player.tasks.filter(location2=location)) > 0:
-        task = player.tasks.filter(location2=location)[0]
-    elif len(player.tasks.filter(location3=location)) > 0:
-        task = player.tasks.filter(location3=location)[0]
+        # find a task at this location
+        if len(player.tasks.filter(location1=location)) > 0:
+            task = player.tasks.filter(location1=location)[0]
+        elif len(player.tasks.filter(location2=location)) > 0:
+            task = player.tasks.filter(location2=location)[0]
+        elif len(player.tasks.filter(location3=location)) > 0:
+            task = player.tasks.filter(location3=location)[0]
+        else:
+            pass
+
+        response = {
+            'taskid': task.id,
+            'level': task.level
+        }
+        return JsonResponse(data=response) # responds with wether or not the right codes have been entered
     else:
-        pass
-
-    response = {
-        'taskid': task.id,
-        'level': task.level
-    }
-    return JsonResponse(data=response) # responds with wether or not the right codes have been entered
+        context = {"additional_context": {'a': 'chat'}}
+        return render(request, 'chat/task.html', context)
 
 
 def signin(request): # sign in function this shit is well writen so im not going to bother commenting
