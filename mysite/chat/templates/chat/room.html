@@ -12,11 +12,11 @@
     <h1>Wellcome to Game {{ room_name }} you are {{ request.user }}</h1>
 
 
-    <div id="TaskProgress" class="">
+    <div id="TaskProgress" class="alert alert-primary">
       <p>TaskProgress</p>
     </div>
 
-    <div id="status" class="">
+    <div id="status" class="alert alert-primary">
       {% if start == 1 %}
         <p>Once there are enough players press start</p>
         <input class="form-group" id="tasknum" type="text" value=2>
@@ -28,15 +28,15 @@
       {% endif %}
     </div>
 
-    <div id="PlayerInfo" class="">
+    <div id="PlayerInfo" class="alert alert-primary">
       <p>PlayerInfo</p>
     </div>
 
-    <div id="Tasks" class="">
+    <div id="Tasks" class="alert alert-primary">
       <p>Tasks</p>
     </div>
 
-    <div id="Players" class="">
+    <div id="Players" class="alert alert-primary">
       <p>players</p>
     </div>
 
