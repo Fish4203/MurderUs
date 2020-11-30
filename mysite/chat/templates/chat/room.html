@@ -3,9 +3,9 @@
 <link rel="stylesheet" type="text/css" href="{% static 'chat/style.css' %}">
 
 {% block content %}
-<div class="fluid-container">
+<div class="container">
 
-  <div class="p-3 jumbotron mx-auto" style="width: 50%;">
+  <div class="p-3 jumbotron mx-auto" >
 
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
@@ -21,9 +21,9 @@
         <div id="status" class="alert alert-primary">
           {% if start == 1 %}
             <p>Once there are enough players press start</p>
-            <input class="form-group" id="tasknum" type="text" value=2>
-            <input class="form-group" id="impnum" type="text" value=2>
-            <input class="form-group" id="rogenum" type="text" value=1>
+            <input class="form-group" id="tasknum" type="text" placeholder="How many tasks do you want">
+            <input class="form-group" id="impnum" type="text" placeholder="How many imposters do you need">
+            <input class="form-group" id="rogenum" type="text" placeholder="How many evil sceintists are there in the ranks">
             <a class="btn btn-success"  id="start" >Start</a>
           {% else %}
             <p>wait for the game to start</p>
@@ -109,6 +109,7 @@
               // sets the progress bar status
               document.querySelector('#TaskProgress').innerHTML = (`
               <div class="alert alert-secondary">
+                <h4>Task Progress bar</h4>
                 <div class="progress">
                   <div class="progress-bar" role="progressbar" style="width: ${data.gameInfo.taskProgres }%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
@@ -127,9 +128,10 @@
 
               } else if (data.gameInfo.status == 'running') {
 
-                document.querySelector('#status').innerHTML = (
-                  '<p>the game has begun <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="call a meating"> </p>'
-                );
+                document.querySelector('#status').innerHTML = (`
+                  <h5>Can you see a dead body? or is some one just acting a litle sus?  </h5>
+                  <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="Call a meating">
+                `);
 
               } else if (data.gameInfo.status == 'meating') {
                 document.querySelector('#status').innerHTML =
@@ -163,6 +165,10 @@
                   <p>Role: Ghost</p>
                   <p>You are DEAD</p>
                 </div>
+                `);
+
+                document.querySelector('#status').innerHTML = (`
+                  <h5>No meatings for you</h5>
                 `);
 
               } else if (data.playerInfo.role == 'imp') {
