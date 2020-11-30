@@ -224,7 +224,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     ### regular function can talk to the database but not he web socket or the users
     def startGame(self, text_data_json): # called when the game starts
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
-        
+
 
         imposterAsign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['impnum']))], int(text_data_json['tasknum']))
         rogeAssign([random.choice(game.players.filter(role='na')) for i in range(int(text_data_json['rogenum']))], int(text_data_json['tasknum']))
@@ -332,7 +332,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         if len(game.tasks.all()) != 0:
-            taskProgres = len(game.tasks.filter(doneness=1)) / len(game.tasks.all())
+            taskProgres = len(game.tasks.filter(doneness=1)) / len(game.tasks.all()) * 100 + 1
         else:
             taskProgres = 0
 

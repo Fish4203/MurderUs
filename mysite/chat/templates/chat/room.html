@@ -12,34 +12,45 @@
     <h1>Wellcome to Game {{ room_name }} you are {{ request.user }}</h1>
 
 
-    <div id="TaskProgress" class="alert alert-primary">
-      <p>TaskProgress</p>
+    <div id="TaskProgress">
+      <p>Error couldnt load TaskProgress</p>
     </div>
 
-    <div id="status" class="alert alert-primary">
-      {% if start == 1 %}
-        <p>Once there are enough players press start</p>
-        <input class="form-group" id="tasknum" type="text" value=2>
-        <input class="form-group" id="impnum" type="text" value=2>
-        <input class="form-group" id="rogenum" type="text" value=1>
-        <a class="btn btn-success"  id="start" >Start</a>
-      {% else %}
-        <p>wait for the game to start</p>
-      {% endif %}
+    <div class="row">
+      <div class="col-sm-6">
+        <div id="status" class="alert alert-primary">
+          {% if start == 1 %}
+            <p>Once there are enough players press start</p>
+            <input class="form-group" id="tasknum" type="text" value=2>
+            <input class="form-group" id="impnum" type="text" value=2>
+            <input class="form-group" id="rogenum" type="text" value=1>
+            <a class="btn btn-success"  id="start" >Start</a>
+          {% else %}
+            <p>wait for the game to start</p>
+          {% endif %}
+        </div>
+
+
+        <div id="Players" class="alert alert-primary">
+          <p>Error couldnt load  players</p>
+        </div>
+
+      </div>
+      <div class="col-sm-6">
+        <div id="PlayerInfo">
+          <p>Error loading PlayerInfo</p>
+        </div>
+      </div>
+
+
     </div>
 
-    <div id="PlayerInfo" class="alert alert-primary">
-      <p>PlayerInfo</p>
-    </div>
 
-    <div id="Tasks" class="alert alert-primary">
-      <p>Tasks</p>
-    </div>
+  </div>
 
-    <div id="Players" class="alert alert-primary">
-      <p>players</p>
-    </div>
-
+  <div id="Tasks" class="alert alert-primary">
+    <p>Tasks</p>
+  </div>
 
     {{ room_name|json_script:"room-name" }}
     <script>
@@ -94,21 +105,44 @@
 
             if ('gameInfo' in data) {
               console.log('game info');
-              document.querySelector('#TaskProgress').innerHTML = data.gameInfo.taskProgres;
-              document.querySelector('#Players').innerHTML = data.gameInfo.players;
+
+              // sets the progress bar status
+              document.querySelector('#TaskProgress').innerHTML = (`
+              <div class="alert alert-secondary">
+                <div class="progress">
+                  <div class="progress-bar" role="progressbar" style="width: ${data.gameInfo.taskProgres }%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+              `);
+
+              document.querySelector('#Players').innerHTML = (`
+                <p>PLayers: ${data.gameInfo.players}</p>
+              `);
               // this is going to be a lot
 
               if (data.gameInfo.status == 'lobby') {
+                document.querySelector('#TaskProgress').innerHTML = (`
+                <p>Wait for the game to start </p>`);
                 //document.querySelector('#status').innerHTML = '<p>Once there are enough players press start</p><a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>'
 
               } else if (data.gameInfo.status == 'running') {
+
                 document.querySelector('#status').innerHTML = (
-                  '<p>the game has begun </p> <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="call a meating">'
+                  '<p>the game has begun <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="call a meating"> </p>'
                 );
 
               } else if (data.gameInfo.status == 'meating') {
                 document.querySelector('#status').innerHTML =
                 '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote">';
+
+                document.querySelector('#PlayerInfo').innerHTML =
+                (`
+                <div class="alert alert-primary">
+                  <h4>Player Name:${data.playerInfo.name}</h4>
+                  <p>Tag:${data.playerInfo.tag}</p>
+                  <p>Role: Hidden for your privecy</p>
+                </div>
+                `);
               }
               // that was a lot
             }
@@ -119,10 +153,56 @@
                 document.querySelector('#status').innerHTML = '<p>you have voted</p>';
               };
 
-              document.querySelector('#PlayerInfo').innerHTML =
-              (
-              '<p>Player Name:'+data.playerInfo.name+' Tag:'+data.playerInfo.tag+' aliveness:'+data.playerInfo.aliveness+' Role:'+data.playerInfo.role+'</p>'
-              );
+              if (data.playerInfo.aliveness == 0) {
+
+                document.querySelector('#PlayerInfo').innerHTML =
+                (`
+                <div class="alert alert-danger">
+                  <h4>Player Name:${data.playerInfo.name}</h4>
+                  <p>Tag:${data.playerInfo.tag}</p>
+                  <p>Role: Ghost</p>
+                  <p>You are DEAD</p>
+                </div>
+                `);
+
+              } else if (data.playerInfo.role == 'imp') {
+
+                document.querySelector('#PlayerInfo').innerHTML =
+                (`
+                <div class="alert alert-warning">
+                  <h4>Player Name:${data.playerInfo.name}</h4>
+                  <p>Tag:${data.playerInfo.tag}</p>
+                  <p>Role: Imposter</p>
+                  <p>You are alive and ready to kill</p>
+                </div>
+                `);
+
+              } else if (data.playerInfo.role == 'roge') {
+
+                document.querySelector('#PlayerInfo').innerHTML =
+                (`
+                <div class="alert alert-warning">
+                  <h4>Player Name:${data.playerInfo.name}</h4>
+                  <p>Tag:${data.playerInfo.tag}</p>
+                  <p>Role: Rogue Sceintist</p>
+                  <p>You are alive and ready to steel</p>
+                </div>
+                `);
+
+              } else {
+
+                document.querySelector('#PlayerInfo').innerHTML =
+                (`
+                <div class="alert alert-success">
+                  <h4>Player Name:${data.playerInfo.name}</h4>
+                  <p>Tag:${data.playerInfo.tag}</p>
+                  <p>Role: Inocent</p>
+                  <p>You are alive for now</p>
+                </div>
+                `);
+
+              }
+
 
               var tasks = ''
               for (const task in data.playerInfo.tasks) {
@@ -205,7 +285,7 @@
         };
     </script>
 
-  </div>
+
 
 
 
