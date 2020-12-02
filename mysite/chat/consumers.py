@@ -183,6 +183,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             ) # sends a message to all users about the meating
 
+        elif text_data_json['role'] == 'taskcode':
+            # a task code is submited
+            await database_sync_to_async(self.tasksubmit)(text_data_json)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'message',
+                    'role': 'taskcode',
+                }
+            ) # sends a message to all users about the task code
+
 
         elif text_data_json['role'] == 'vote': # called when a user votes in a meating
             # a vote is cast
@@ -289,7 +300,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def kill(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
-        victem = game.players.filter(name=text_data_json['victem']).filter(tag=text_data_json['tag'])
+        victem = game.players.filter(tag=text_data_json['tag'])
 
         if len(victem) == 1:
             victem[0].aliveness = 0
@@ -298,6 +309,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return 1
         return 0
 
+    def tasksubmit(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        task = game.tasks.get(id=text_data_json['taskid'])
+
+        if text_data_json['code'] == task.codefinal:
+            task.doneness = 0
+        elif text_data_json['code'] == task.code1:
+            task.doneness = 1
+        elif text_data_json['code'] == task.code2:
+            task.doneness = 2
+
+        task.save()
+        game.save()
+        return 1
 
     def playerInfo(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object

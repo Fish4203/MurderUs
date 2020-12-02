@@ -48,7 +48,7 @@
 
   </div>
 
-  <div id="Tasks" class="alert alert-primary">
+  <div id="Tasks" class="row">
     <p>Tasks</p>
   </div>
 
@@ -88,6 +88,10 @@
 
             } else if (data.role == 'meating') {
               console.log('meating');
+              getInfo();
+
+            } else if (data.role == 'taskcode') {
+              console.log('taskcode');
               getInfo();
 
             } else if (data.role == 'voted') {
@@ -211,22 +215,46 @@
 
 
               var tasks = ''
-              for (const task in data.playerInfo.tasks) {
+
+              if (data.playerInfo.role == 'imp') {
                 tasks += (`
-                  <h5>${data.playerInfo.tasks[task].name}</h5>
-                  <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness]}</p>
-                  <input class="form-group" id="${data.playerInfo.tasks[task].id}" type="code">
-                  <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
+                <div class="col-md-4">
+                  <div class="alert alert-danger">
+                    <h5>Kill someone</h5>
+
+                    <input class="form-group" id="victem-tag" type="text">
+                    <input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">
+                  </div>
+                </div>
                 `)
               }
 
-              document.querySelector('#Tasks').innerHTML = tasks;
+              for (const task in data.playerInfo.tasks) {
+                if (task.doneness == 0) {
+                  tasks += (`
+                  <div class="col-md-4">
+                    <div class="alert alert-success">
+                      <h5>${data.playerInfo.tasks[task].name}</h5>
+                      <p>Task compleated</p>
+                    </div>
+                  </div>
+                  `)
+                } else {
+                  tasks += (`
+                  <div class="col-md-4">
+                    <div class="alert alert-primary">
+                      <h5>${data.playerInfo.tasks[task].name}</h5>
+                      <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness]}</p>
 
-              if (data.playerInfo.role == 'imp') {
-                document.querySelector('#Tasks').innerHTML += (
-                  '<input class="form-group" id="victem" type="text"><input class="form-group" id="victem-tag" type="text"><br><input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">'
-                )
+                      <input class="form-group" id="${data.playerInfo.tasks[task].id}" type="code">
+                      <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
+                    </div>
+                  </div>
+                  `)
+                }
               }
+
+              document.querySelector('#Tasks').innerHTML = tasks;
             }
         }
 
@@ -293,7 +321,7 @@
             const tagdom = document.querySelector('#victem-tag');
             const tag = tagdom.value;
             chatSocket.send(JSON.stringify({
-                'tag': tag, 
+                'tag': tag,
                 'user': '{{ request.user }}',
                 'gameID': gameID,
                 'role': 'kill'
