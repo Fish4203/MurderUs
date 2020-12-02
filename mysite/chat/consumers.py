@@ -312,7 +312,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'name': task.name,
                 'id': task.id,
                 'location': [task.location1, task.location2, task.location3],
-                'level': 2 if task.code2 == '' else 1 if task.code1 == '' else 0
             } for task in player.tasks.all()]
 
             out = {
@@ -349,7 +348,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         player = game.players.filter(name=text_data_json['user'])
 
         if len(player) == 0:
-            player = Player(name=text_data_json['user'], aliveness=1, tag=random.randint(0,2000), role='na', votes=0, voted=0)
+            player = Player(name=text_data_json['user'], aliveness=1, tag=0, role='na', votes=0, voted=0)
+            player.save()
+            player.tag = (int(player.id) * int(text_data_json['gameID'])) % 10000
             player.save()
         else:
             player = player[0]

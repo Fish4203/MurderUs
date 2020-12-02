@@ -212,7 +212,12 @@
 
               var tasks = ''
               for (const task in data.playerInfo.tasks) {
-                tasks += '<p>' + data.playerInfo.tasks[task].type + data.playerInfo.tasks[task].doneness + data.playerInfo.tasks[task].name + '</p>'
+                tasks += (`
+                  <h5>${data.playerInfo.tasks[task].name}</h5>
+                  <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness]}</p>
+                  <input class="form-group" id="${data.playerInfo.tasks[task].id}" type="code">
+                  <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
+                `)
               }
 
               document.querySelector('#Tasks').innerHTML = tasks;
@@ -267,17 +272,31 @@
           }));
         };
 
+        function taskfunction(taskid) {
+          console.log('taskfunction clicked')
+          const codedom = document.querySelector(`#${taskid}`);
+          const code = codedom.value;
 
+          chatSocket.send(JSON.stringify({
+              'role': 'taskcode',
+              'user': '{{ request.user }}',
+              'taskid': taskid,
+              'code': code,
+              'gameID': gameID
+          }));
+        };
 
 
 
         function killfunction() {
-            const victemdom = document.querySelector('#victem');
-            const victem = victemdom.value;
+
             const tagdom = document.querySelector('#victem-tag');
             const tag = tagdom.value;
             chatSocket.send(JSON.stringify({
-                'victem': victem, 'tag': tag, 'user': '{{ request.user }}', 'gameID': gameID, 'role': 'kill'
+                'tag': tag, 
+                'user': '{{ request.user }}',
+                'gameID': gameID,
+                'role': 'kill'
             }));
         };
 
