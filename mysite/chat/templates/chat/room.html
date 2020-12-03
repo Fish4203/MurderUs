@@ -230,7 +230,7 @@
               }
 
               for (const task in data.playerInfo.tasks) {
-                if (task.doneness == 0) {
+                if (data.playerInfo.tasks[task].doneness == 0) {
                   tasks += (`
                   <div class="col-md-4">
                     <div class="alert alert-success">
@@ -244,9 +244,9 @@
                   <div class="col-md-4">
                     <div class="alert alert-primary">
                       <h5>${data.playerInfo.tasks[task].name}</h5>
-                      <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness]}</p>
+                      <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness-1]}</p>
 
-                      <input class="form-group" id="${data.playerInfo.tasks[task].id}" type="code">
+                      <input id="code${data.playerInfo.tasks[task].id}" type="code">
                       <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
                     </div>
                   </div>
@@ -302,7 +302,8 @@
 
         function taskfunction(taskid) {
           console.log('taskfunction clicked')
-          const codedom = document.querySelector(`#${taskid}`);
+
+          const codedom = document.querySelector(`#code${taskid}`);
           const code = codedom.value;
 
           chatSocket.send(JSON.stringify({

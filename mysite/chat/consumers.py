@@ -88,7 +88,7 @@ def inocentAssign(players, tasknum): # assigns all the players in the player lis
     # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
-        doneness=0,
+        doneness=1,
         type='good',
         name='minigame 1',
         codefinal='mini1',
@@ -96,7 +96,7 @@ def inocentAssign(players, tasknum): # assigns all the players in the player lis
         ))
 
     tasks.append(Task(
-        doneness=0,
+        doneness=3,
         type='good',
         name='enter codes',
         codefinal='1111',
