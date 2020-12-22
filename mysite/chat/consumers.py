@@ -12,7 +12,7 @@ def imposterAsign(players, tasknum): # assigns all the players in the player lis
     # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
-        doneness=0,
+        doneness=3,
         type='sabotage',
         name='sabotage power',
         codefinal='fish',
@@ -24,7 +24,7 @@ def imposterAsign(players, tasknum): # assigns all the players in the player lis
         ))
 
     tasks.append(Task(
-        doneness=0,
+        doneness=3,
         type='sabotage',
         name='disable fence',
         codefinal='tree',
@@ -52,7 +52,7 @@ def rogeAssign(players, tasknum): # assigns all the players in the player list f
 # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
-        doneness=0,
+        doneness=3,
         type='good',
         name='minigame 1',
         codefinal='mini1',
@@ -60,7 +60,7 @@ def rogeAssign(players, tasknum): # assigns all the players in the player list f
         ))
 
     tasks.append(Task(
-        doneness=0,
+        doneness=3,
         type='good',
         name='enter codes',
         codefinal='1111',
@@ -185,12 +185,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         elif text_data_json['role'] == 'taskcode':
             # a task code is submited
-            await database_sync_to_async(self.tasksubmit)(text_data_json)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'taskcode',
+                    'result': await database_sync_to_async(self.tasksubmit)(text_data_json)
                 }
             ) # sends a message to all users about the task code
 
@@ -262,7 +262,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 
-        if game.status == 'meating' and player.voted == 0:
+        if game.status == 'meating' and player.voted == 0 and player.aliveness == 1:
             if text_data_json['person'] == text_data_json['user']:
                 player.votes += 1
                 player.voted = 1
@@ -282,6 +282,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 try:
                     elimenated.aliveness = 0
                     elimenated.save()
+
+                    for task in elimenated.tasks.all():
+                        task.delete()
                 except:
                     pass
 
@@ -300,25 +303,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def kill(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
+        player = game.players.get(name=text_data_json['user'])
         victem = game.players.filter(tag=text_data_json['tag'])
 
-        if len(victem) == 1:
+        if len(victem) == 1 and player.aliveness == 1:
             victem[0].aliveness = 0
             victem[0].save()
+
+            for task in victem[0].tasks.all():
+                task.delete()
+
+
 
             return 1
         return 0
 
     def tasksubmit(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        player = game.players.get(name=text_data_json['user'])
         task = game.tasks.get(id=text_data_json['taskid'])
 
-        if text_data_json['code'] == task.codefinal:
-            task.doneness = 0
-        elif text_data_json['code'] == task.code1:
-            task.doneness = 1
-        elif text_data_json['code'] == task.code2:
-            task.doneness = 2
+        if player.aliveness == 1:
+
+            if text_data_json['code'] == task.codefinal:
+                task.doneness = 0
+            elif text_data_json['code'] == task.code1:
+                task.doneness = 1
+            elif text_data_json['code'] == task.code2:
+                task.doneness = 2
+        else:
+            return 0
 
         task.save()
         game.save()
@@ -356,7 +370,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         if len(game.tasks.all()) != 0:
-            taskProgres = len(game.tasks.filter(doneness=1)) / len(game.tasks.all()) * 100 + 1
+            taskProgres = len(game.tasks.filter(doneness=0)) / len(game.tasks.all()) * 100
         else:
             taskProgres = 0
 

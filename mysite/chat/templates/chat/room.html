@@ -101,9 +101,19 @@
             } else if (data.role == 'kill') {
               console.log('voted');
               if (data.result == 1) {
-                document.querySelector('#Tasks').innerHTML += 'you kill a person';
+                document.querySelector('#Tasks').innerHTML += (
+                `<div class="col-md-4">
+                  <div class="alert alert-sucsess">
+                    <h5>You Got em</h5>
+                  </div>
+                </div>`);
               } else {
-                document.querySelector('#Tasks').innerHTML += 'wrong tag nice try';
+                document.querySelector('#Tasks').innerHTML += (
+                `<div class="col-md-4">
+                  <div class="alert alert-danger">
+                    <h5>No Kill</h5>
+                  </div>
+                </div>`);
               }
             }
 

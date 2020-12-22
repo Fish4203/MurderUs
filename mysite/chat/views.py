@@ -20,12 +20,13 @@ def room(request, room_name): # room view
     context = {"additional_context": {'a': 'chat'}, 'room_name': room_name, 'start': start}
     return render(request, 'chat/room.html', context)
 
-def submitTask(request, taskid,  auth=''):
+def submitTask(request, gameid, taskid,  auth=''):
+    game = Game.objects.filter(gameId=gameid)[0]
     # used by the tasks to submit a compleated task
     task = Task.objects.get(id=taskid)
 
     # checks if the right authorisation is used
-    if Game.objects.filter(tasks__id=taskid)[0].auth == auth:
+    if game.auth == auth:
         # changes the level the task is on
         task.doneness -= 1
         task.save()
@@ -35,10 +36,11 @@ def submitTask(request, taskid,  auth=''):
 
     return JsonResponse(data=response) # responds with wether or not the right codes have been entered
 
-def getTask(request, location, tag, auth=''):
+def getTask(request, gameid, location, tag, auth=''):
     # used to sign users in and give them thr right task
+    game = Game.objects.filter(gameId=gameid)[0]
     try:
-        tasks = Player.objects.filter(name=request.POST['username']).get(tag=request.POST['Tag']).tasks.all()
+        tasks = game.players.filter(tag=tag)[0].tasks.all()
     except:
         return JsonResponse(data={'status': 'playerNA'})
 
@@ -55,7 +57,8 @@ def getTask(request, location, tag, auth=''):
     response = {
         'status': 'sucsess',
         'taskid': task.id,
-        'level': task.level
+        'level': task.doneness,
+        'name': task.name
     }
     return JsonResponse(data=response) # responds with wether or not the right codes have been entered
 
