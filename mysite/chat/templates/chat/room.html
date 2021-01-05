@@ -90,6 +90,10 @@
               console.log('meating');
               getInfo();
 
+            } else if (data.role == 'addtask') {
+              console.log('addtask');
+              getInfo();
+
             } else if (data.role == 'taskcode') {
               console.log('taskcode');
               getInfo();
@@ -249,12 +253,36 @@
                     </div>
                   </div>
                   `)
+                } else if (data.playerInfo.tasks[task].doneness == -1) {
+                  tasks += (`
+                  <div class="col-md-4">
+                    <div class="alert alert-primary">
+                      <h5>${data.playerInfo.tasks[task].name}</h5>
+
+                      <input class="btn btn-success" onclick="addTaskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Sabotage">
+                    </div>
+                  </div>
+                  `)
+                } else if (data.playerInfo.tasks[task].doneness == -2) {
+
+                  if (data.gameInfo.taskProgres > 50) {
+                    tasks += (`
+                    <div class="col-md-4">
+                      <div class="alert alert-primary">
+                        <h5>${data.playerInfo.tasks[task].name}</h5>
+
+                        <input class="btn btn-success" onclick="addTaskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Sabotage">
+                      </div>
+                    </div>
+                    `)
+                  }
                 } else {
                   tasks += (`
                   <div class="col-md-4">
                     <div class="alert alert-primary">
                       <h5>${data.playerInfo.tasks[task].name}</h5>
                       <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness-1]}</p>
+                      <p>${data.playerInfo.tasks[task].note}</p>
 
                       <input id="code${data.playerInfo.tasks[task].id}" type="code">
                       <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
@@ -321,6 +349,17 @@
               'user': '{{ request.user }}',
               'taskid': taskid,
               'code': code,
+              'gameID': gameID
+          }));
+        };
+
+        function addTaskfunction(taskid) {
+          console.log('taskfunction clicked')
+
+          chatSocket.send(JSON.stringify({
+              'role': 'addTask',
+              'user': '{{ request.user }}',
+              'taskid': taskid,
               'gameID': gameID
           }));
         };

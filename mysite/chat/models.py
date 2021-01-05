@@ -9,6 +9,7 @@ class Task(models.Model):
     doneness = models.IntegerField() # one for done 0 for not done
     type = models.CharField(max_length=200)
     name = models.CharField(max_length=200)
+    note = models.CharField(max_length=500)
     # codes foe each stage of the task
     codefinal = models.CharField(max_length=200, default='', blank=True)
     code1 = models.CharField(max_length=200, default='', blank=True)
@@ -40,7 +41,7 @@ class Game(models.Model):
     status = models.CharField(max_length=200) # wat stage the game is in
     tasks = models.ManyToManyField(Task)
     players = models.ManyToManyField(Player)
-    auth = models.CharField(max_length=200, default='', blank=True) # an optional auth code for authorised task compleation 
+    auth = models.CharField(max_length=200, default='', blank=True) # an optional auth code for authorised task compleation
 
     def __str__(self):
         return str(self.gameId)

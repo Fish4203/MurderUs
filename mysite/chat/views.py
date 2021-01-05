@@ -45,14 +45,26 @@ def getTask(request, gameid, location, tag, auth=''):
         return JsonResponse(data={'status': 'playerNA'})
 
     # find a task at this location
-    if len(tasks.filter(location1=location).filter(doneness=1)) > 0:
-        task = tasks.filter(location1=location).filter(doneness=1)[0]
-    elif len(tasks.filter(location2=location).filter(doneness=2)) > 0:
-        task = tasks.filter(location2=location).filter(doneness=2)[0]
-    elif len(tasks.filter(location3=location).filter(doneness=3)) > 0:
-        task = tasks.filter(location3=location).filter(doneness=3)[0]
+    if len(game.tasks.filter(type='sabotage')) != 0:
+        tasks = game.tasks.filter(type='sabotage')
+
+        if len(tasks.filter(location1=location).filter(doneness=1)) > 0:
+            task = tasks.filter(location1=location).filter(doneness=1)[0]
+        elif len(tasks.filter(location2=location).filter(doneness=2)) > 0:
+            task = tasks.filter(location2=location).filter(doneness=2)[0]
+        elif len(tasks.filter(location3=location).filter(doneness=3)) > 0:
+            task = tasks.filter(location3=location).filter(doneness=3)[0]
+        else:
+            return JsonResponse(data={'status': 'sabotage'})
     else:
-        return JsonResponse(data={'status': 'locationNA'})
+        if len(tasks.filter(location1=location).filter(doneness=1)) > 0:
+            task = tasks.filter(location1=location).filter(doneness=1)[0]
+        elif len(tasks.filter(location2=location).filter(doneness=2)) > 0:
+            task = tasks.filter(location2=location).filter(doneness=2)[0]
+        elif len(tasks.filter(location3=location).filter(doneness=3)) > 0:
+            task = tasks.filter(location3=location).filter(doneness=3)[0]
+        else:
+            return JsonResponse(data={'status': 'locationNA'})
 
     response = {
         'status': 'sucsess',

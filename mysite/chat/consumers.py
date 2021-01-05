@@ -12,9 +12,10 @@ def imposterAsign(players, tasknum): # assigns all the players in the player lis
     # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
-        doneness=3,
+        doneness=-1,
         type='sabotage',
         name='sabotage power',
+        note='someone has turned of the power',
         codefinal='fish',
         code1='12',
         code2='34',
@@ -24,9 +25,10 @@ def imposterAsign(players, tasknum): # assigns all the players in the player lis
         ))
 
     tasks.append(Task(
-        doneness=3,
+        doneness=-1,
         type='sabotage',
         name='disable fence',
+        note='the fence has been disabled ',
         codefinal='tree',
         code1='12',
         code2='34',
@@ -52,24 +54,14 @@ def rogeAssign(players, tasknum): # assigns all the players in the player list f
 # tasks are defined here just add or remove from list to chang what tasks get chosen
     tasks = []
     tasks.append(Task(
-        doneness=3,
-        type='good',
-        name='minigame 1',
+        doneness=-2,
+        type='roge',
+        name='steal data',
+        note='some one is trying to steal the reserch data you have to stop them',
         codefinal='mini1',
         location1='power box',
         ))
 
-    tasks.append(Task(
-        doneness=3,
-        type='good',
-        name='enter codes',
-        codefinal='1111',
-        code1='1234',
-        code2='5678',
-        location1='controle',
-        location2='tree',
-        location3='fence'
-        ))
 
     # assigns the role and tasks for eath player and then saves the player
     for player in players:
@@ -91,6 +83,7 @@ def inocentAssign(players, tasknum): # assigns all the players in the player lis
         doneness=1,
         type='good',
         name='minigame 1',
+        note='the first mini game',
         codefinal='mini1',
         location1='power box',
         ))
@@ -99,6 +92,7 @@ def inocentAssign(players, tasknum): # assigns all the players in the player lis
         doneness=3,
         type='good',
         name='enter codes',
+        note='the seconed mini game',
         codefinal='1111',
         code1='1234',
         code2='5678',
@@ -194,6 +188,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             ) # sends a message to all users about the task code
 
+        elif text_data_json['role'] == 'addTask':
+            # a task code is submited
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'message',
+                    'role': 'addtask',
+                    'result': await database_sync_to_async(self.addTask)(text_data_json)
+                }
+            ) # sends a message to all users about the task code
+
 
         elif text_data_json['role'] == 'vote': # called when a user votes in a meating
             # a vote is cast
@@ -242,7 +247,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         inocentAssign(game.players.filter(role='na'), int(text_data_json['tasknum']))
 
         for player in game.players.all():
-            for task in player.tasks.all():
+            for task in player.tasks.filter(type='good'):
                 game.tasks.add(task)
 
         game.status = 'running'
@@ -338,6 +343,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game.save()
         return 1
 
+
+    def addTask(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0]
+        player = game.players.get(name=text_data_json['user'])
+        task = player.tasks.get(id=text_data_json['taskid'])
+
+        task.doneness = 3
+        task.save()
+
+        game.tasks.add(task)
+        game.save()
+
+        for play in game.players.all():
+            play.tasks.add(task)
+            play.save()
+
+        return 1
+
+
     def playerInfo(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         player = game.players.filter(name=text_data_json['user'])
@@ -350,6 +374,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': task.type,
                 'name': task.name,
                 'id': task.id,
+                'note': task.note,
                 'location': [task.location1, task.location2, task.location3],
             } for task in player.tasks.all()]
 
@@ -370,7 +395,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         if len(game.tasks.all()) != 0:
-            taskProgres = len(game.tasks.filter(doneness=0)) / len(game.tasks.all()) * 100
+            taskProgres = len(game.tasks.filter(type='good').filter(doneness=0)) / len(game.tasks.filter(type='good')) * 100
         else:
             taskProgres = 0
 

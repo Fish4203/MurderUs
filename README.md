@@ -1,13 +1,11 @@
 # MurderUs
 
 ## to do
-- tasks front end
-- lots of front end
-- get a theme (research lab)
-- mini games and lots of them
-- commenting
-- documentation
-- add mini game urls 
+- make the mini game app
+- fix all the bugs
+- find all the bugs
+- figure out how to hoast the server
+- make tasks better
 
 ## how to run it
 docker run -p 6379:6379 -d redis:5
