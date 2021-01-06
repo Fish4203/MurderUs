@@ -394,7 +394,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def gameInfo(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
-        if len(game.tasks.all()) != 0:
+        if len(game.tasks.filter(type='good')) != 0:
             taskProgres = len(game.tasks.filter(type='good').filter(doneness=0)) / len(game.tasks.filter(type='good')) * 100
         else:
             taskProgres = 0
