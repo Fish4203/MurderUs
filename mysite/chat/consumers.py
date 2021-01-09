@@ -145,35 +145,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if text_data_json['role'] == 'initial': # when a user first connects this is called
             # new player
-            await database_sync_to_async(self.newPlayer)(text_data_json)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'players',
+                    'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json),
+                    'result': await database_sync_to_async(self.newPlayer)(text_data_json)
                 }
             ) # sends a message to all users about the new player
 
         elif text_data_json['role'] == 'start': # called when the game starts
             # the game starts
-            await database_sync_to_async(self.startGame)(text_data_json)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'start',
+                    'result': await database_sync_to_async(self.startGame)(text_data_json)
                 }
             )# sends a message to all users about the start of the game
 
         elif text_data_json['role'] == 'meating': # called when a meating is called
             # a meating is called
-            await database_sync_to_async(self.meating)(text_data_json)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'meating',
+                    'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json),
+                    'result': await database_sync_to_async(self.meating)(text_data_json)
                 }
             ) # sends a message to all users about the meating
 
@@ -194,7 +196,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'message',
-                    'role': 'addtask',
+                    'role': 'addedtask',
                     'result': await database_sync_to_async(self.addTask)(text_data_json)
                 }
             ) # sends a message to all users about the task code
@@ -202,12 +204,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         elif text_data_json['role'] == 'vote': # called when a user votes in a meating
             # a vote is cast
-            await database_sync_to_async(self.vote)(text_data_json)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'message',
                     'role': 'voted',
+                    'result': await database_sync_to_async(self.vote)(text_data_json),
                     'user': text_data_json['user'],
                 }
             ) # sends a message to all users that user has voted
@@ -224,9 +226,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         elif text_data_json['role'] == 'getInfo': # called when a user wants info about the game
             # sends game info to given user
             await self.send(text_data=json.dumps({
-                'role': 'gameInfo',
+                'role': 'getInfo',
                 'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json),
-                'playerInfo': await database_sync_to_async(self.playerInfo)(text_data_json)
+                'playerInfo': await database_sync_to_async(self.playerInfo)(text_data_json),
+                'taskInfo': await database_sync_to_async(self.taskInfo)(text_data_json)
             })) # sends the info about the game to the user who requested it
 
 
@@ -253,12 +256,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         game.status = 'running'
         game.save()
 
+        return 1
+
 
     def meating(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
 
         game.status = 'meating'
         game.save()
+
+        return 1
 
     def vote(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
@@ -362,9 +369,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return 1
 
 
-    def playerInfo(self, text_data_json):
+    def newPlayer(self, text_data_json):
         game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
         player = game.players.filter(name=text_data_json['user'])
+
+        if len(player) == 0:
+            player = Player(name=text_data_json['user'], aliveness=1, tag=0, role='na', votes=0, voted=0)
+            player.save()
+            player.tag = (int(player.id) * int(text_data_json['gameID'])) % 10000
+            player.save()
+        else:
+            player = player[0]
+
+        game.players.add(player)
+        game.save()
+
+        return 1
+
+
+    def taskInfo(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
+        player = game.players.filter(name=text_data_json['user'])
+
+        if len(game.tasks.filter(type='good')) != 0:
+            taskProgres = len(game.tasks.filter(type='good').filter(doneness=0)) / len(game.tasks.filter(type='good')) * 100
+        else:
+            taskProgres = 0
 
         if len(player) != 0:
             player = player[0]
@@ -379,14 +409,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
             } for task in player.tasks.all()]
 
             out = {
+                'tasks': tasks,
+                'role': player.role,
+                'taskProgres': taskProgres
+            }
+        else:
+            out = {'error': 'Could not find player'}
+
+        return out
+
+    def playerInfo(self, text_data_json):
+        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
+        player = game.players.filter(name=text_data_json['user'])
+
+        if len(player) != 0:
+            player = player[0]
+
+            out = {
                 'name': player.name,
                 'aliveness': player.aliveness,
                 'tag': player.tag,
                 'role': player.role,
-                'tasks': tasks,
                 'votes': player.votes,
                 'voted': player.voted
             }
+        else:
+            out = {'error': 'Could not find player'}
 
         return out
 
@@ -405,19 +453,3 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'players': [player.name for player in game.players.all()]
         }
         return out
-
-
-    def newPlayer(self, text_data_json):
-        game = Game.objects.filter(gameId=text_data_json['gameID'])[0] # get the game object
-        player = game.players.filter(name=text_data_json['user'])
-
-        if len(player) == 0:
-            player = Player(name=text_data_json['user'], aliveness=1, tag=0, role='na', votes=0, voted=0)
-            player.save()
-            player.tag = (int(player.id) * int(text_data_json['gameID'])) % 10000
-            player.save()
-        else:
-            player = player[0]
-
-        game.players.add(player)
-        game.save()

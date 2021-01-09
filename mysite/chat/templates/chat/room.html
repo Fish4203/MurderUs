@@ -11,6 +11,8 @@
 
     <h1>Wellcome to Game {{ room_name }} you are {{ request.user }}</h1>
 
+    <div id="notify">
+    </div>
 
     <div id="TaskProgress">
       <p>Error couldnt load TaskProgress</p>
@@ -54,8 +56,10 @@
 
     {{ room_name|json_script:"room-name" }}
     <script>
+        // geting the gameid
         const gameID = JSON.parse(document.getElementById('room-name').textContent);
 
+        // creating the chat socket connection
         const chatSocket = new WebSocket(
             'ws://'
             + window.location.host
@@ -64,6 +68,7 @@
             + '/'
         );
 
+        // sending the inital mesage to the server
         chatSocket.onopen = function(e) {
           console.log('open');
           chatSocket.send(JSON.stringify({
@@ -73,6 +78,7 @@
           }));
         };
 
+        // this is called when a mesage is receaved from the server
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
 
@@ -80,7 +86,6 @@
 
             if (data.role == 'players') {
               console.log('players');
-              getInfo();
 
             } else if (data.role == 'start') {
               console.log('start');
@@ -88,7 +93,6 @@
 
             } else if (data.role == 'meating') {
               console.log('meating');
-              getInfo();
 
             } else if (data.role == 'addtask') {
               console.log('addtask');
@@ -105,203 +109,239 @@
             } else if (data.role == 'kill') {
               console.log('voted');
               if (data.result == 1) {
-                document.querySelector('#Tasks').innerHTML += (
-                `<div class="col-md-4">
-                  <div class="alert alert-sucsess">
-                    <h5>You Got em</h5>
-                  </div>
-                </div>`);
+                document.querySelector('#notify').innerHTML += (
+                `<div class="alert alert-success">
+                  <h5>You Got em</h5>
+                </div>
+                `);
               } else {
-                document.querySelector('#Tasks').innerHTML += (
-                `<div class="col-md-4">
-                  <div class="alert alert-danger">
+                document.querySelector('#notify').innerHTML += (
+                `<div class="alert alert-danger">
                     <h5>No Kill</h5>
                   </div>
-                </div>`);
+                `);
               }
             }
+
+
+
+
+            // this updates all the info when it is receaved from the server
+
 
             if ('gameInfo' in data) {
               console.log('game info');
 
-              // sets the progress bar status
-              document.querySelector('#TaskProgress').innerHTML = (`
-              <div class="alert alert-secondary">
-                <h4>Task Progress bar</h4>
-                <div class="progress">
-                  <div class="progress-bar" role="progressbar" style="width: ${data.gameInfo.taskProgres }%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </div>
-              `);
 
-              document.querySelector('#Players').innerHTML = (`
-                <p>PLayers: ${data.gameInfo.players}</p>
-              `);
-              // this is going to be a lot
-
-              if (data.gameInfo.status == 'lobby') {
+              if ('error' in data.gameInfo) {
+                // if there is an error it gets displayed here
+                document.querySelector('#notify').innerHTML = (data.gameInfo.error);
+              } else {
+                // sets the progress bar status
                 document.querySelector('#TaskProgress').innerHTML = (`
-                <p>Wait for the game to start </p>`);
-                //document.querySelector('#status').innerHTML = '<p>Once there are enough players press start</p><a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>'
-
-              } else if (data.gameInfo.status == 'running') {
-
-                document.querySelector('#status').innerHTML = (`
-                  <h5>Can you see a dead body? or is some one just acting a litle sus?  </h5>
-                  <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="Call a meating">
-                `);
-
-              } else if (data.gameInfo.status == 'meating') {
-                document.querySelector('#status').innerHTML =
-                '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote">';
-
-                document.querySelector('#PlayerInfo').innerHTML =
-                (`
-                <div class="alert alert-primary">
-                  <h4>Player Name:${data.playerInfo.name}</h4>
-                  <p>Tag:${data.playerInfo.tag}</p>
-                  <p>Role: Hidden for your privecy</p>
+                <div class="alert alert-secondary">
+                  <h4>Task Progress bar</h4>
+                  <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: ${data.gameInfo.taskProgres }%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
                 </div>
                 `);
+
+                // lists the players in the game
+                document.querySelector('#Players').innerHTML = (`
+                  <p>PLayers: ${data.gameInfo.players}</p>
+                `);
+
+                // this is a big kahoona that tells the user the starus of the game
+                if (data.gameInfo.status == 'lobby') {
+                  document.querySelector('#TaskProgress').innerHTML = (`
+                  <p>Wait for the game to start </p>`);
+                  //document.querySelector('#status').innerHTML = '<p>Once there are enough players press start</p><a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>'
+
+                } else if (data.gameInfo.status == 'running') {
+
+                  document.querySelector('#status').innerHTML = (`
+                    <h5>Can you see a dead body? or is some one just acting a litle sus?  </h5>
+                    <input class="btn btn-success" onclick="meatingfunction()"  id="meating" type="button" value="Call a meating">
+                  `);
+
+                } else if (data.gameInfo.status == 'meating') {
+                  document.querySelector('#status').innerHTML =
+                  '<input class="form-group" id="person" type="text"><br><input class="btn btn-success" onclick="votefunction()" id="vote" type="button" value="Vote">';
+                }
               }
-              // that was a lot
             }
 
+
+            // this is where player info is updated
             if ('playerInfo' in data) {
               console.log('player info');
-              if (data.playerInfo.voted == 1) {
-                document.querySelector('#status').innerHTML = '<p>you have voted</p>';
-              };
 
-              if (data.playerInfo.aliveness == 0) {
-
-                document.querySelector('#PlayerInfo').innerHTML =
-                (`
-                <div class="alert alert-danger">
-                  <h4>Player Name:${data.playerInfo.name}</h4>
-                  <p>Tag:${data.playerInfo.tag}</p>
-                  <p>Role: Ghost</p>
-                  <p>You are DEAD</p>
-                </div>
-                `);
-
-                document.querySelector('#status').innerHTML = (`
-                  <h5>No meatings for you</h5>
-                `);
-
-              } else if (data.playerInfo.role == 'imp') {
-
-                document.querySelector('#PlayerInfo').innerHTML =
-                (`
-                <div class="alert alert-warning">
-                  <h4>Player Name:${data.playerInfo.name}</h4>
-                  <p>Tag:${data.playerInfo.tag}</p>
-                  <p>Role: Imposter</p>
-                  <p>You are alive and ready to kill</p>
-                </div>
-                `);
-
-              } else if (data.playerInfo.role == 'roge') {
-
-                document.querySelector('#PlayerInfo').innerHTML =
-                (`
-                <div class="alert alert-warning">
-                  <h4>Player Name:${data.playerInfo.name}</h4>
-                  <p>Tag:${data.playerInfo.tag}</p>
-                  <p>Role: Rogue Sceintist</p>
-                  <p>You are alive and ready to steel</p>
-                </div>
-                `);
-
+              if ('error' in data.playerInfo) {
+                // if there is an error it gets displayed here
+                document.querySelector('#notify').innerHTML = (data.playerInfo.error);
               } else {
 
-                document.querySelector('#PlayerInfo').innerHTML =
-                (`
-                <div class="alert alert-success">
-                  <h4>Player Name:${data.playerInfo.name}</h4>
-                  <p>Tag:${data.playerInfo.tag}</p>
-                  <p>Role: Inocent</p>
-                  <p>You are alive for now</p>
-                </div>
-                `);
+                // updates the players voting status
+                if (data.playerInfo.voted == 1) {
+                  document.querySelector('#status').innerHTML = '<p>you have voted</p>';
+                };
 
-              }
+                // this is where the info on the player is updated
+                if (data.playerInfo.aliveness == 0) {
 
-
-              var tasks = ''
-
-              if (data.playerInfo.role == 'imp') {
-                tasks += (`
-                <div class="col-md-4">
+                  document.querySelector('#PlayerInfo').innerHTML =
+                  (`
                   <div class="alert alert-danger">
-                    <h5>Kill someone</h5>
-
-                    <input class="form-group" id="victem-tag" type="text">
-                    <input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">
+                    <h4>Player Name:${data.playerInfo.name}</h4>
+                    <p>Tag:${data.playerInfo.tag}</p>
+                    <p>Role: Ghost</p>
+                    <p>You are DEAD</p>
                   </div>
-                </div>
-                `)
-              }
+                  `);
 
-              for (const task in data.playerInfo.tasks) {
-                if (data.playerInfo.tasks[task].doneness == 0) {
-                  tasks += (`
-                  <div class="col-md-4">
-                    <div class="alert alert-success">
-                      <h5>${data.playerInfo.tasks[task].name}</h5>
-                      <p>Task compleated</p>
-                    </div>
+                  document.querySelector('#status').innerHTML = (`
+                    <h5>No meatings for you</h5>
+                  `);
+
+                } else if (data.playerInfo.role == 'imp') {
+
+                  document.querySelector('#PlayerInfo').innerHTML =
+                  (`
+                  <div class="alert alert-warning">
+                    <h4>Player Name:${data.playerInfo.name}</h4>
+                    <p>Tag:${data.playerInfo.tag}</p>
+                    <p>Role: Imposter</p>
+                    <p>You are alive and ready to kill</p>
                   </div>
-                  `)
-                } else if (data.playerInfo.tasks[task].doneness == -1) {
-                  tasks += (`
-                  <div class="col-md-4">
-                    <div class="alert alert-primary">
-                      <h5>${data.playerInfo.tasks[task].name}</h5>
+                  `);
 
-                      <input class="btn btn-success" onclick="addTaskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Sabotage">
-                    </div>
+                } else if (data.playerInfo.role == 'roge') {
+
+                  document.querySelector('#PlayerInfo').innerHTML =
+                  (`
+                  <div class="alert alert-warning">
+                    <h4>Player Name:${data.playerInfo.name}</h4>
+                    <p>Tag:${data.playerInfo.tag}</p>
+                    <p>Role: Rogue Sceintist</p>
+                    <p>You are alive and ready to steel</p>
                   </div>
-                  `)
-                } else if (data.playerInfo.tasks[task].doneness == -2) {
+                  `);
 
-                  if (data.gameInfo.taskProgres > 50) {
-                    tasks += (`
-                    <div class="col-md-4">
-                      <div class="alert alert-primary">
-                        <h5>${data.playerInfo.tasks[task].name}</h5>
-
-                        <input class="btn btn-success" onclick="addTaskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Sabotage">
-                      </div>
-                    </div>
-                    `)
-                  }
                 } else {
+
+                  document.querySelector('#PlayerInfo').innerHTML =
+                  (`
+                  <div class="alert alert-success">
+                    <h4>Player Name:${data.playerInfo.name}</h4>
+                    <p>Tag:${data.playerInfo.tag}</p>
+                    <p>Role: Inocent</p>
+                    <p>You are alive for now</p>
+                  </div>
+                  `);
+
+                }
+              }
+            }
+
+
+            if ('taskInfo' in data) {
+              console.log('taskInfo');
+
+              if ('error' in data.taskInfo) {
+                // if there is an error it gets displayed here
+                document.querySelector('#notify').innerHTML = (data.taskInfo.error);
+              } else {
+
+                // a tasks verable is initalised
+                var tasks = ''
+
+                // from here on out its a big mess and i take no responsability if it breakes
+                // if the user is an imposter they get a kill task
+                if (data.taskInfo.role == 'imp') {
                   tasks += (`
                   <div class="col-md-4">
-                    <div class="alert alert-primary">
-                      <h5>${data.playerInfo.tasks[task].name}</h5>
-                      <p>Go to: ${data.playerInfo.tasks[task].location[data.playerInfo.tasks[task].doneness-1]}</p>
-                      <p>${data.playerInfo.tasks[task].note}</p>
+                    <div class="alert alert-danger">
+                      <h5>Kill someone</h5>
 
-                      <input id="code${data.playerInfo.tasks[task].id}" type="code">
-                      <input class="btn btn-success" onclick="taskfunction('${data.playerInfo.tasks[task].id}')" id="task${data.playerInfo.tasks[task].id}" type="button" value="Submit">
+                      <input class="form-group" id="victem-tag" type="text">
+                      <input class="btn btn-success" onclick="killfunction()" id="kill" type="button" value="kill">
                     </div>
                   </div>
                   `)
                 }
-              }
 
+                // for every task the player has this thing runs
+                for (const task in data.taskInfo.tasks) {
+
+                  // 0 = the task is done
+                  if (data.taskInfo.tasks[task].doneness == 0) {
+                    tasks += (`
+                    <div class="col-md-4">
+                      <div class="alert alert-success">
+                        <h5>${data.taskInfo.tasks[task].name}</h5>
+                        <p>Task compleated</p>
+                      </div>
+                    </div>
+                    `)
+                  } else if (data.taskInfo.tasks[task].doneness == -1) {
+                    // -1 = the task is a sabotage task that needs to be actevated
+                    tasks += (`
+                    <div class="col-md-4">
+                      <div class="alert alert-primary">
+                        <h5>${data.taskInfo.tasks[task].name}</h5>
+
+                        <input class="btn btn-success" onclick="addTaskfunction('${data.taskInfo.tasks[task].id}')" id="task${data.taskInfo.tasks[task].id}" type="button" value="Sabotage">
+                      </div>
+                    </div>
+                    `)
+                  } else if (data.taskInfo.tasks[task].doneness == -2) {
+                    // -2 = a roge task that needs to be activated
+                    if (data.taskInfo.taskProgres > 50) {
+                      tasks += (`
+                      <div class="col-md-4">
+                        <div class="alert alert-primary">
+                          <h5>${data.taskInfo.tasks[task].name}</h5>
+
+                          <input class="btn btn-success" onclick="addTaskfunction('${data.taskInfo.tasks[task].id}')" id="task${data.taskInfo.tasks[task].id}" type="button" value="Sabotage">
+                        </div>
+                      </div>
+                      `)
+                    }
+                  } else {
+                    // any thing else its a regular active task
+                    tasks += (`
+                    <div class="col-md-4">
+                      <div class="alert alert-primary">
+                        <h5>${data.taskInfo.tasks[task].name}</h5>
+                        <p>Go to: ${data.taskInfo.tasks[task].location[data.taskInfo.tasks[task].doneness-1]}</p>
+                        <p>${data.taskInfo.tasks[task].note}</p>
+
+                        <input id="code${data.taskInfo.tasks[task].id}" type="code">
+                        <input class="btn btn-success" onclick="taskfunction('${data.taskInfo.tasks[task].id}')" id="task${data.taskInfo.tasks[task].id}" type="button" value="Submit">
+                      </div>
+                    </div>
+                  `)
+                }
+              }
+              // the tasks get added to the page
               document.querySelector('#Tasks').innerHTML = tasks;
             }
+          }
         }
 
+        // the chat socket closes
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
         };
 
+
+        // This is the big function block
+
+        // idk why i did this function different but im not going to change it
+        // starts the game
         document.querySelector('#start').onclick = function(e) {
-          console.log('start clicked')
+          console.log('startfunction')
 
           const tasknumdom = document.querySelector('#tasknum');
           const tasknum = tasknumdom.value;
@@ -321,7 +361,9 @@
         };
 
 
+        // tells the server to send the info abut the game
         function getInfo() {
+          console.log('getInfofunction');
           chatSocket.send(JSON.stringify({
               'role': 'getInfo',
               'user': '{{ request.user }}',
@@ -329,8 +371,9 @@
           }));
         }
 
+        // a meating is called
         function meatingfunction() {
-          console.log('meatingfunction clicked')
+          console.log('meatingfunction')
           chatSocket.send(JSON.stringify({
               'role': 'meating',
               'user': '{{ request.user }}',
@@ -338,9 +381,10 @@
           }));
         };
 
+        // a task code is submited
         function taskfunction(taskid) {
-          console.log('taskfunction clicked')
-
+          console.log('taskfunction')
+          // this bit was a pain to get working
           const codedom = document.querySelector(`#code${taskid}`);
           const code = codedom.value;
 
@@ -353,8 +397,9 @@
           }));
         };
 
+        // when a sabotage or roge task is submited and everyone gets the task
         function addTaskfunction(taskid) {
-          console.log('taskfunction clicked')
+          console.log('addTaskfunction')
 
           chatSocket.send(JSON.stringify({
               'role': 'addTask',
@@ -364,9 +409,9 @@
           }));
         };
 
-
-
+        // an imposter kills someone
         function killfunction() {
+            console.log('killfunction');
 
             const tagdom = document.querySelector('#victem-tag');
             const tag = tagdom.value;
@@ -378,11 +423,17 @@
             }));
         };
 
+        // a user votes some one out
         function votefunction() {
+          console.log('votefunction');
+
             const messageInputDom = document.querySelector('#person');
             const person = messageInputDom.value;
             chatSocket.send(JSON.stringify({
-                'person': person, 'user': '{{ request.user }}', 'gameID': gameID, 'role': 'vote'
+                'person': person,
+                'user': '{{ request.user }}',
+                'gameID': gameID,
+                'role': 'vote'
             }));
             document.querySelector('#status').innerHTML = '<p>you have voted</p>';
         };
