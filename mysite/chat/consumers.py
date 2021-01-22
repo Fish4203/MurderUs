@@ -298,7 +298,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     for task in elimenated.tasks.all():
                         task.delete()
                 except:
-                    pass
+                    return 0
 
                 for playe in game.players.all():
                     playe.voted = 0
@@ -447,9 +447,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         else:
             taskProgres = 0
 
+        if len(game.players.filter(role='imp')) == 0:
+            win = 1
+        elif len(game.players.filter(role='in')) < len(game.players.filter(role='imp')):
+            win = 2
+        elif len(game.tasks.filter(type='roge').filter(doneness=0)) > 0:
+            win = 3
+
         out = {
             'status': game.status,
             'taskProgres': taskProgres,
+            'win': win,
             'players': [player.name for player in game.players.all()]
         }
         return out

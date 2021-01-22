@@ -147,6 +147,32 @@
                 </div>
                 `);
 
+                if (data.gameInfo.taskProgres == 100) {
+                  document.querySelector('#notify').innerHTML += (
+                  `<div class="alert alert-success">
+                    <h5>All Tasks completed Inocents win</h5>
+                  </div>
+                  `);
+                } else if (data.gameInfo.win == 1) {
+                  document.querySelector('#notify').innerHTML += (
+                  `<div class="alert alert-success">
+                    <h5>All imposters elimenated</h5>
+                  </div>
+                  `);
+                } else if (data.gameInfo.win == 2) {
+                  document.querySelector('#notify').innerHTML += (
+                  `<div class="alert alert-success">
+                    <h5>Impostors are victorious</h5>
+                  </div>
+                  `);
+                } else if (data.gameInfo.win == 3) {
+                  document.querySelector('#notify').innerHTML += (
+                  `<div class="alert alert-success">
+                    <h5>The rogue has compled the task</h5>
+                  </div>
+                  `);
+                }
+
                 // lists the players in the game
                 document.querySelector('#Players').innerHTML = (`
                   <p>PLayers: ${data.gameInfo.players}</p>
@@ -154,7 +180,7 @@
 
                 // this is a big kahoona that tells the user the starus of the game
                 if (data.gameInfo.status == 'lobby') {
-                  document.querySelector('#TaskProgress').innerHTML = (`
+                  document.querySelector('#notify').innerHTML = (`
                   <p>Wait for the game to start </p>`);
                   //document.querySelector('#status').innerHTML = '<p>Once there are enough players press start</p><a class="btn btn-success"  id="start" onclick="startfunction()">Start</a>'
 
