@@ -150,8 +150,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'message',
                     'role': 'players',
+                    'result': await database_sync_to_async(self.newPlayer)(text_data_json),
                     'gameInfo': await database_sync_to_async(self.gameInfo)(text_data_json),
-                    'result': await database_sync_to_async(self.newPlayer)(text_data_json)
                 }
             ) # sends a message to all users about the new player
 
@@ -453,6 +453,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             win = 2
         elif len(game.tasks.filter(type='roge').filter(doneness=0)) > 0:
             win = 3
+        else:
+            win = 0
 
         out = {
             'status': game.status,
